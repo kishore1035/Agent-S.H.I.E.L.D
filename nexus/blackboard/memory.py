@@ -1,15 +1,28 @@
+from __future__ import annotations
 import asyncio
-from typing import Any
+from typing import Any, TYPE_CHECKING
 from .events import BlackboardEntry, BlackboardEvent
+
+if TYPE_CHECKING:
+    from nexus.persistence.sqlite_store import SqliteBlackboardStore
 
 
 class Blackboard:
     """Thread-safe, async shared memory notebook for AI worker agents."""
 
-    def __init__(self):
+    def __init__(self, persistence_store: SqliteBlackboardStore | None = None):
         self._entries: dict[str, BlackboardEntry] = {}
         self._subscribers: set[asyncio.Queue[BlackboardEvent]] = set()
         self._lock = asyncio.Lock()
+        self.persistence_store = persistence_store
+
+    @classmethod
+    async def from_persistence(cls, store: SqliteBlackboardStore) -> Blackboard:
+        bb = cls(persistence_store=store)
+        entries = await store.load_all()
+        for e in entries:
+            bb._entries[e.key] = e
+        return bb
 
     def subscribe(self) -> asyncio.Queue[BlackboardEvent]:
         queue: asyncio.Queue[BlackboardEvent] = asyncio.Queue(maxsize=256)
@@ -30,6 +43,12 @@ class Blackboard:
                 version=version,
             )
             self._entries[key] = entry
+
+        if self.persistence_store:
+            try:
+                await self.persistence_store.save_entry(entry)
+            except Exception:
+                pass
 
         event = BlackboardEvent(entry=entry, event_type="updated")
         # Broadcast to all live subscribers without blocking
