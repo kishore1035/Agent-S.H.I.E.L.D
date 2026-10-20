@@ -96,6 +96,10 @@ def create_app(
 
     static_path = Path(__file__).parent / "static" / "index.html"
 
+    @app.get("/health")
+    async def health_check():
+        return {"status": "ok", "version": "1.0.0"}
+
     @app.get("/", response_class=HTMLResponse)
     async def get_index():
         if static_path.exists():
