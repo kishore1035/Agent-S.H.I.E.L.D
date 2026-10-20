@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus: Autonomous Agent Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans flex flex-col">
+
+  <!-- Navigation -->
+  <header class="border-b border-gray-800 glass sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-500/20">
+          N
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-none tracking-tight">Nexus</h1>
+          <p class="text-xs text-gray-400">Autonomous Agent Hub</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div id="ws-badge" class="flex items-center space-x-2 text-xs font-medium px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Live WebSocket</span>
+        </div>
+        <span class="text-xs text-gray-400 font-mono">v0.1.0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Metrics Bar -->
+  <div class="max-w-7xl mx-auto px-4 w-full py-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="glass p-4 rounded-xl border border-gray-800">
+      <div class="text-xs text-gray-400 font-medium">App Store Workers</div>
+      <div id="stat-agents" class="text-2xl font-bold mt-1 text-indigo-400">0</div>
+    </div>
+    <div class="glass p-4 rounded-xl border border-gray-800">
+      <div class="text-xs text-gray-400 font-medium">Blackboard Entries</div>
+      <div id="stat-blackboard" class="text-2xl font-bold mt-1 text-emerald-400">0</div>
+    </div>
+    <div class="glass p-4 rounded-xl border border-gray-800">
+      <div class="text-xs text-gray-400 font-medium">Sandbox Runs</div>
+      <div id="stat-sandboxes" class="text-2xl font-bold mt-1 text-purple-400">0</div>
+    </div>
+    <div class="glass p-4 rounded-xl border border-gray-800">
+      <div class="text-xs text-gray-400 font-medium">Verified Receipts</div>
+      <div id="stat-receipts" class="text-2xl font-bold mt-1 text-amber-400">0</div>
+    </div>
+  </div>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-7xl mx-auto px-4 w-full flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
+
+    <!-- Left Column: Task Launcher & Realtime Execution Log -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Task Input Card -->
+      <div class="glass p-5 rounded-2xl border border-gray-800">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">Dispatch Multi-Agent Task</h2>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <input
+            id="task-input"
+            type="text"
+            placeholder="e.g., Analyze sales metrics, generate python model, and verify script"
+            class="flex-1 bg-gray-900/90 border border-gray-700 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 outline-none transition"
+          />
+          <button
+            id="btn-run"
+            onclick="dispatchTask()"
+            class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2"
+          >
+            <span>Launch Task</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Execution Log -->
+      <div class="glass p-5 rounded-2xl border border-gray-800 flex flex-col h-[480px]">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-800 mb-3">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Live Execution Stream</h2>
+          <button onclick="clearLogs()" class="text-xs text-gray-500 hover:text-gray-300">Clear</button>
+        </div>
+        <div id="logs-container" class="flex-1 overflow-y-auto font-mono text-xs space-y-2 text-gray-300 pr-2">
+          <div class="text-gray-500 italic">[System] Connected to Nexus hub daemon. Ready for instructions.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Blackboard & App Store Tabs -->
+    <div class="space-y-6">
+
+      <!-- Blackboard Live Notebook -->
+      <div class="glass p-5 rounded-2xl border border-gray-800">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">Shared Blackboard Notebook</h2>
+        <div id="blackboard-list" class="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+          <div class="text-xs text-gray-500 italic">No blackboard entries yet.</div>
+        </div>
+      </div>
+
+      <!-- App Store Worker Registry -->
+      <div class="glass p-5 rounded-2xl border border-gray-800">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-3">App Store Workers</h2>
+        <div id="agents-list" class="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+          <div class="text-xs text-gray-500 italic">Loading registered workers...</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    let ws;
+    let sandboxCount = 0;
+    let receiptCount = 0;
+
+    function initWebSocket() {
+      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${proto}//${window.location.host}/ws`);
+
+      ws.onopen = () => {
+        document.getElementById('ws-badge').classList.remove('bg-rose-500/10', 'text-rose-400', 'border-rose-500/20');
+        document.getElementById('ws-badge').classList.add('bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20');
+        document.getElementById('ws-badge').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>Live WebSocket</span>';
+        logMessage('[WebSocket] Connection established.');
+        fetchInitialData();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWsEvent(data);
+        } catch (e) {
+          logMessage(event.data);
+        }
+      };
+
+      ws.onclose = () => {
+        document.getElementById('ws-badge').classList.remove('bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20');
+        document.getElementById('ws-badge').classList.add('bg-rose-500/10', 'text-rose-400', 'border-rose-500/20');
+        document.getElementById('ws-badge').innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-400"></span><span>Disconnected</span>';
+        setTimeout(initWebSocket, 2000);
+      };
+    }
+
+    function handleWsEvent(data) {
+      if (data.type === 'log') {
+        logMessage(data.message);
+      } else if (data.type === 'blackboard_update') {
+        logMessage(`[Blackboard] ${data.author} updated '${data.key}' (v${data.version})`);
+        fetchBlackboard();
+      } else if (data.type === 'sandbox_event') {
+        sandboxCount++;
+        document.getElementById('stat-sandboxes').innerText = sandboxCount;
+        logMessage(`[Trust Layer] Sandbox test: ${data.message}`);
+      } else if (data.type === 'receipt') {
+        receiptCount++;
+        document.getElementById('stat-receipts').innerText = receiptCount;
+        logMessage(`[Receipt] Ed25519 signature generated: ${data.signature.substring(0, 32)}...`);
+      }
+    }
+
+    function logMessage(msg) {
+      const container = document.getElementById('logs-container');
+      const row = document.createElement('div');
+      row.className = 'py-0.5 border-b border-gray-900 text-gray-300';
+      row.innerText = msg;
+      container.appendChild(row);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('logs-container').innerHTML = '';
+    }
+
+    async function fetchInitialData() {
+      await fetchAgents();
+      await fetchBlackboard();
+    }
+
+    async function fetchAgents() {
+      try {
+        const res = await fetch('/api/agents');
+        const agents = await res.json();
+        document.getElementById('stat-agents').innerText = agents.length;
+        const container = document.getElementById('agents-list');
+        container.innerHTML = '';
+        agents.forEach(a => {
+          const card = document.createElement('div');
+          card.className = 'p-3 bg-gray-900/60 rounded-xl border border-gray-800 text-xs';
+          card.innerHTML = `
+            <div class="flex items-center justify-between font-medium text-gray-200">
+              <span>${a.name}</span>
+              <span class="text-indigo-400">v${a.version}</span>
+            </div>
+            <div class="text-gray-400 text-[11px] mt-1 font-mono">${a.id}</div>
+            <div class="flex flex-wrap gap-1 mt-2">
+              ${a.capabilities.map(c => `<span class="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-300 rounded text-[10px] font-mono">${c}</span>`).join('')}
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {}
+    }
+
+    async function fetchBlackboard() {
+      try {
+        const res = await fetch('/api/blackboard');
+        const entries = await res.json();
+        document.getElementById('stat-blackboard').innerText = entries.length;
+        const container = document.getElementById('blackboard-list');
+        container.innerHTML = '';
+        if (entries.length === 0) {
+          container.innerHTML = '<div class="text-xs text-gray-500 italic">No blackboard entries yet.</div>';
+          return;
+        }
+        entries.forEach(e => {
+          const card = document.createElement('div');
+          card.className = 'p-3 bg-gray-900/60 rounded-xl border border-gray-800 text-xs';
+          card.innerHTML = `
+            <div class="flex items-center justify-between font-mono text-emerald-400">
+              <span class="font-bold">${e.key}</span>
+              <span class="text-gray-500">v${e.version}</span>
+            </div>
+            <div class="text-gray-300 text-[11px] mt-1 line-clamp-2">${JSON.stringify(e.value)}</div>
+            <div class="text-[10px] text-gray-500 mt-1.5 flex justify-between">
+              <span>By: ${e.author}</span>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {}
+    }
+
+    async function dispatchTask() {
+      const input = document.getElementById('task-input');
+      const task = input.value.trim();
+      if (!task) return;
+
+      logMessage(`[User] Launching task: "${task}"`);
+      input.value = '';
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: 'run_task', task: task }));
+      } else {
+        await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task: task })
+        });
+      }
+    }
+
+    window.onload = initWebSocket;
+  </script>
+</body>
+</html>
