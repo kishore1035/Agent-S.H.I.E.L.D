@@ -23,9 +23,9 @@
 - Modify: `pyproject.toml`
 - Test: verify `uv sync` resolves new packages
 
-- [ ] **Step 1: Update pyproject.toml dependencies**
-- [ ] **Step 2: Run uv sync**
-- [ ] **Step 3: Commit**
+- [x] **Step 1: Update pyproject.toml dependencies**
+- [x] **Step 2: Run uv sync**
+- [x] **Step 3: Commit**
 
 ---
 
@@ -42,11 +42,11 @@
   - `async save_entry(entry: BlackboardEntry)`
   - `async load_all() -> list[BlackboardEntry]`
 
-- [ ] **Step 1: Write failing test**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing test**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -62,11 +62,11 @@
 - `OllamaLlmClient(LlmClient)`
 - `create_llm_client(preferred: str | None = None) -> LlmClient`
 
-- [ ] **Step 1: Write failing test**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing test**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -80,11 +80,11 @@
 - `PluginLoader`:
   - `load_from_directory(dir_path: str) -> list[Agent]`
 
-- [ ] **Step 1: Write failing test**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing test**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -99,11 +99,11 @@
 - `render_plan_tree(subtasks: list[Subtask])`
 - `render_receipt_panel(receipt: SignedReceipt)`
 
-- [ ] **Step 1: Write failing test**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing test**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -118,11 +118,11 @@
 - `create_app(...) -> FastAPI`
 - WebSocket `/ws` broadcast loop
 
-- [ ] **Step 1: Write failing test**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing test**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -135,11 +135,11 @@
 **Interfaces:**
 - `run_demo_scenario(name: str) -> None`
 
-- [ ] **Step 1: Write failing test**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing test**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -148,8 +148,8 @@
 - Modify: `nexus/cli.py`
 - Test: `tests/test_e2e_product.py`
 
-- [ ] **Step 1: Write failing test**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement minimal code**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing test**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement minimal code**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
