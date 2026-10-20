@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-20
 - **Status:** Approved
-- **Target Implementation:** Rust (Tokio, Clap, Ed25519-dalek, Bubblewrap)
+- **Target Implementation:** Python (Asyncio, Pydantic, Click, Cryptography, Bubblewrap)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Nexus is an orchestration platform and runtime for specialized AI worker agents. It provides:
 1. **Worker App Store (Registry):** Plug-and-play capability catalog for discovering and invoking specialized agents.
-2. **Shared Memory Blackboard:** A live, thread-safe digital notebook with pub/sub event broadcasting, preventing redundant computation.
+2. **Shared Memory Blackboard:** A live, async-safe digital notebook with pub/sub event broadcasting, preventing redundant computation.
 3. **Resilient Router & Supervisor:** Dynamic task decomposition, capability-based routing, and automatic failover when agents crash or time out.
 4. **Trust Layer & Self-Healing Sandbox:** Sandboxed code execution using Linux namespaces (`bwrap`), automated retry loops on failures, and Ed25519 cryptographic receipts for verified outputs.
 
@@ -42,7 +42,7 @@ Nexus is an orchestration platform and runtime for specialized AI worker agents.
                   ▼                       ▼
           ┌───────────────────────────────────────┐
           │      Shared Memory Blackboard         │
-          │  (Arc<RwLock>, pub/sub events)        │
+          │  (asyncio.Lock, pub/sub queues)       │
           └───────────────────────────────────────┘
                               │
                               ▼
@@ -64,105 +64,47 @@ Nexus is an orchestration platform and runtime for specialized AI worker agents.
 
 ## 3. Component Specifications
 
-### 3.1 App Store & Worker Registry (`src/app_store/`)
-- **`AgentManifest`**:
-  - `id`: Unique agent slug (e.g., `"coding-agent-v1"`).
+### 3.1 App Store & Worker Registry (`nexus/app_store/`)
+- **`AgentManifest` (Pydantic)**:
+  - `id`: Unique agent slug (e.g., `"coding-agent"`).
   - `name`: Display name.
-  - `capabilities`: Set of supported tags (`["code-generation", "code-fixing", "python", "rust"]`).
+  - `capabilities`: List of supported tags (`["code", "python", "fix"]`).
   - `version`: Semantic version string.
   - `timeout_secs`: Execution timeout cap.
-- **`Registry`**:
+- **`AppStore`**:
   - In-memory catalog of registered agent implementations.
   - Scoring function matching subtask requirement tags against agent capabilities.
-  - Supports dynamic registration of custom or user-provided agent configurations.
 
-### 3.2 Shared Memory Blackboard (`src/blackboard/`)
+### 3.2 Shared Memory Blackboard (`nexus/blackboard/`)
 - **Storage Model**:
-  - `Arc<RwLock<Blackboard>>` containing key-value entries.
-  - Each entry has: `key: String`, `value: serde_json::Value`, `author: String`, `version: u64`, `timestamp: chrono::DateTime<Utc>`.
+  - Thread/async-safe dictionary guarded by `asyncio.Lock`.
+  - Entries have: `key: str`, `value: Any`, `author: str`, `version: int`, `timestamp: datetime`.
 - **Pub/Sub Notification**:
-  - `tokio::sync::broadcast::Sender<BlackboardEvent>` notifies all active agents when entries are created, updated, or finalized.
-  - Workers inspect blackboard prior to running queries or tasks to reuse existing findings.
+  - Asynchronous event bus distributing `BlackboardEvent` across subscribed worker queues.
 
-### 3.3 Router & Supervisor (`src/router/`)
+### 3.3 Router & Supervisor (`nexus/router/`)
 - **Planner**:
   - Accepts top-level user task.
-  - Decomposes task into a directed acyclic graph (DAG) of `Subtask` nodes with dependency edges.
-  - Uses capability scoring to select best agent for each node.
+  - Decomposes task into a directed acyclic graph (DAG) of `Subtask` items.
 - **Supervisor**:
-  - Manages worker execution lifecycles with `tokio::spawn` and `tokio::time::timeout`.
-  - Heartbeat and status tracking (`Pending`, `Running`, `Completed`, `Failed`).
-  - **Failover Logic**: If worker times out or panics, the supervisor marks the worker offline, logs failure to blackboard, and re-dispatches the subtask to the next highest-scoring alternative agent.
+  - Manages worker execution lifecycles with `asyncio.wait_for`.
+  - Detects timeouts or exceptions and triggers automatic failover to fallback agents.
 
-### 3.4 Trust Layer & Self-Healing Sandbox (`src/trust/`)
+### 3.4 Trust Layer & Self-Healing Sandbox (`nexus/trust/`)
 - **Sandbox Runner (`bwrap`)**:
-  - Executes untrusted code artifacts in isolated Linux namespaces.
-  - Configured with:
-    - Read-only root mount (`--ro-bind / /`).
-    - Ephemeral tmpfs (`--tmpfs /tmp`).
-    - Unshared namespaces (`--unshare-all`).
-    - Network disabled by default (`--unshare-net`).
-    - Hard CPU time and memory limits.
-  - Non-Linux / missing-`bwrap` fallback: restricted subprocess runner with warnings.
+  - Executes untrusted code artifacts in isolated Linux namespaces (`bwrap --ro-bind / / --tmpfs /tmp --unshare-all`).
+  - Fallback unconfined mode when bwrap is absent or explicitly flagged.
 - **Self-Healing Loop**:
   - Intercepts non-zero exit codes, runtime panics, or stderr outputs.
-  - Formulates error feedback context and re-prompts the worker agent to diagnose and regenerate fixed code.
-  - Configurable maximum retries (default: 3). Fails gracefully if attempts are exhausted.
-- **Cryptographic Receipts (`receipt.rs`)**:
-  - Computes SHA-256 digest over task input, final code/output, execution metadata, and sandbox telemetry.
-  - Signs digest with host Ed25519 keypair.
-  - Produces standalone `SignedReceipt` JSON containing signature, public key, and timestamp for downstream auditability.
+  - Feeds error trace back to agent with instructions to repair code (up to N retries).
+- **Cryptographic Receipts (`receipt.py`)**:
+  - Computes SHA-256 digest over task input, final code/output, and metadata.
+  - Signs digest with Ed25519 private key via `cryptography.hazmat.primitives.asymmetric.ed25519`.
+  - Produces standalone `SignedReceipt` for verification.
 
-### 3.5 LLM Engine Abstraction (`src/llm/`)
-- **`LlmClient` Trait**:
-  - Async method `complete(prompt: &str, system: Option<&str>) -> Result<String, LlmError>`.
+### 3.5 LLM Engine Abstraction (`nexus/llm/`)
+- **`LlmClient` Base**:
+  - Abstract method `async def complete(prompt: str, system: str | None = None) -> str`.
 - **Implementations**:
   - `ApiLlmClient`: HTTP client compatible with Anthropic and OpenAI-compatible API schemas.
-  - `MockLlmClient`: Deterministic pattern-matching driver for testing, CI, and offline execution without API keys.
-
----
-
-## 4. CLI Interface (`src/main.rs`)
-
-Built with `clap` (derive interface):
-
-```bash
-# Run a task through Nexus
-nexus run "Analyze data.csv and generate summary report" \
-  [--mock-llm] \
-  [--sandbox-retries 3] \
-  [--export-receipt ./receipt.json] \
-  [--dry-run]
-
-# List all available agents in App Store
-nexus list-agents
-
-# Cryptographically verify an execution receipt
-nexus verify-receipt ./receipt.json
-```
-
----
-
-## 5. Error Handling & Recovery Matrix
-
-| Scenario | Detection | Recovery Action |
-|----------|-----------|-----------------|
-| Agent panics or times out | Supervisor task join failure or elapsed timeout | Mark agent failed; re-route subtask to fallback agent |
-| Sandboxed code crashes | `bwrap` exit code != 0 or stderr present | Self-healing loop: feed stderr back to agent, re-generate code (up to N retries) |
-| Retries exhausted | Loop counter exceeds `sandbox_retries` | Mark task failed, record error on blackboard, emit error receipt |
-| Host lacks `bwrap` | Executable lookup fails | Warn user; run in unconfined subprocess mode with explicit user flag |
-| Blackboard concurrency | Read/write lock contention | Non-blocking try-read/write with async retry backoff |
-
----
-
-## 6. Testing Strategy
-
-1. **Unit Tests**:
-   - `test_registry_capability_scoring`: Validate agent selection ranking.
-   - `test_blackboard_concurrency_and_pubsub`: Verify concurrent read/write and event delivery.
-   - `test_ed25519_receipt_sign_and_verify`: Ensure signature verification succeeds on untampered receipts and fails on tampered data.
-   - `test_task_dag_dependency_resolution`: Verify subtasks execute in valid topological order.
-2. **Integration Tests**:
-   - `test_e2e_mock_workflow`: Complete task execution using `MockLlmClient` from CLI to merged output.
-   - `test_supervisor_agent_failover`: Deliberate agent panic triggers re-route to secondary agent.
-   - `test_self_healing_sandbox_retry`: Faulty script generates crash, self-healing loop corrects code on retry 2.
+  - `MockLlmClient`: Deterministic pattern-matching driver for offline tests.
