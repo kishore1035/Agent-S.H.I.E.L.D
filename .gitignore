@@ -31,7 +31,11 @@ venv.bak/
 .coverage
 htmlcov/
 *.log
+*.db
+*.sqlite3
 .DS_Store
 
 .superpowers/
 open-codesign/
+frontend/
+docs/
