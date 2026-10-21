@@ -1,1 +1,166 @@
 @import "tailwindcss";
+
+:root {
+  /* Yuva Garden Editorial Palette Tokens */
+  --bg-paper: #f4f1ea;
+  --surface: #faf9f6;
+  --ink: #1b2a1f;
+  --muted: #646a78;
+  --line: #d8d4cb;
+  --gold: #6b5a2e;
+  --olive: #64864d;
+  --green: #168343;
+  --amber: #b67922;
+  --red: #aa342b;
+  --line-subtle: rgba(27, 42, 31, 0.12);
+}
+
+@theme {
+  --font-serif: "Newsreader", "Bodoni Moda", Georgia, serif;
+  --font-sans: "Hanken Grotesk", "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-paper: var(--bg-paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-gold: var(--gold);
+  --color-olive: var(--olive);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+  --color-red: var(--red);
+}
+
+/* Base Body Typography and Canvas */
+body {
+  background-color: var(--bg-paper);
+  color: var(--ink);
+  font-family: var(--font-sans, "Hanken Grotesk", system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Crisp Hairline Border Utilities */
+.border-hairline {
+  border: 1px solid var(--line);
+}
+
+.border-hairline-t {
+  border-top: 1px solid var(--line);
+}
+
+.border-hairline-b {
+  border-bottom: 1px solid var(--line);
+}
+
+.border-hairline-l {
+  border-left: 1px solid var(--line);
+}
+
+.border-hairline-r {
+  border-right: 1px solid var(--line);
+}
+
+.border-subtle {
+  border-color: var(--line-subtle);
+}
+
+/* Palette Utility Classes */
+.bg-paper {
+  background-color: var(--bg-paper);
+}
+
+.bg-surface {
+  background-color: var(--surface);
+}
+
+.bg-ink {
+  background-color: var(--ink);
+}
+
+.bg-gold {
+  background-color: var(--gold);
+}
+
+.bg-olive {
+  background-color: var(--olive);
+}
+
+.bg-green {
+  background-color: var(--green);
+}
+
+.bg-amber {
+  background-color: var(--amber);
+}
+
+.bg-red {
+  background-color: var(--red);
+}
+
+.text-ink {
+  color: var(--ink);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.text-paper {
+  color: var(--bg-paper);
+}
+
+.text-surface {
+  color: var(--surface);
+}
+
+.text-gold {
+  color: var(--gold);
+}
+
+.text-olive {
+  color: var(--olive);
+}
+
+.text-green {
+  color: var(--green);
+}
+
+.text-amber {
+  color: var(--amber);
+}
+
+.text-red {
+  color: var(--red);
+}
+
+.border-line {
+  border-color: var(--line);
+}
+
+/* Custom Smooth Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--line);
+  border-radius: 9999px;
+  transition: background-color 0.15s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
