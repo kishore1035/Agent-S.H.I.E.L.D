@@ -1,539 +1,431 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus — Autonomous Agent Runtime & Swarm Orchestrator</title>
-
-  <!-- Fonts: Inter & JetBrains Mono -->
+  <meta name="theme-color" content="#f3f1ec">
+  <title>Nexus — Agent workspace</title>
+  <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
-          },
-          colors: {
-            dark: {
-              950: '#060709',
-              900: '#0d0f12',
-              850: '#12151a',
-              800: '#181c23',
-              750: '#202630',
-              700: '#2b3341',
-              600: '#414d60',
-            },
-            accent: {
-              indigo: '#5e6ad2',
-              violet: '#7170ff',
-              emerald: '#10b981',
-              amber: '#f59e0b',
-              rose: '#ef4444',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #07080a;
-      --panel: #0d0f12;
-      --border: rgba(255, 255, 255, 0.08);
-      --border-bright: rgba(255, 255, 255, 0.15);
+      color-scheme: light;
+      --paper: #f3f1ec; --surface: #faf9f6; --ink: #15171a;
+      --muted: #646a78; --line: #d8d4cb; --blue: #2447c9;
+      --green: #168343; --red: #aa342b;
+      --sans: 'IBM Plex Sans', system-ui, sans-serif;
+      --serif: 'Newsreader', Georgia, serif;
+      --mono: 'IBM Plex Mono', ui-monospace, monospace;
     }
-    body {
-      background-color: var(--bg);
-      color: #e2e8f0;
-      font-family: 'Inter', system-ui, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+    button, input, textarea, select { font: inherit; }
+    button, a, textarea, select { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .55; }
+    a { color: inherit; text-decoration: none; }
+    a:hover, .text-button:hover { color: var(--blue); }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+    [hidden] { display: none !important; }
+    ::selection { background: #dce3ff; }
+    h1, h2, h3, p { margin: 0; }
+    h1, h2, h3 { font-family: var(--serif); font-weight: 400; }
+    .skip-link { position: fixed; top: -60px; left: 16px; z-index: 10; padding: 10px; background: var(--surface); }
+    .skip-link:focus { top: 8px; }
+    .topbar { border-bottom: 1px solid var(--line); }
+    .topbar-inner { max-width: 1600px; margin: auto; min-height: 72px; padding: 0 3.35%; display: flex; align-items: center; gap: 68px; }
+    .brand { font: 500 34px/1 var(--serif); letter-spacing: -1px; }
+    .nav { align-self: stretch; display: flex; gap: 42px; align-items: stretch; }
+    .nav a { display: flex; align-items: center; padding-top: 2px; border-bottom: 2px solid transparent; font-size: 15px; }
+    .nav a[aria-current] { color: var(--blue); border-bottom-color: var(--blue); }
+    .connection { margin-left: auto; display: flex; gap: 10px; align-items: center; color: #505661; font-size: 14px; white-space: nowrap; }
+    .connection::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #a09b91; }
+    .connection[data-state="connected"]::before { background: var(--green); }
+    .connection[data-state="disconnected"]::before { background: #b67922; }
+    .page { max-width: 1600px; margin: auto; padding: 34px 3.35% 0; }
+    .intro { margin-bottom: 20px; }
+    h1 { font-size: clamp(40px, 4.3vw, 66px); font-weight: 500; line-height: 1; letter-spacing: -1.8px; }
+    .intro p { margin-top: 8px; font: 25px/1.3 var(--serif); color: #363c47; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.97fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+    .primary-column, .reference-column { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+    .section { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 3px; }
+    .section-header { min-height: 54px; padding: 12px 22px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h2 { font-size: 26px; line-height: 1.1; letter-spacing: -.4px; }
+    .composer { padding: 16px 22px 22px; }
+    textarea { display: block; width: 100%; min-height: 132px; resize: vertical; max-height: 420px; padding: 13px; border: 1px solid #c9c5bd; border-radius: 3px; background: transparent; color: var(--ink); font: 14px/1.6 var(--mono); }
+    textarea::placeholder { color: var(--muted); opacity: 1; }
+    textarea:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+    .composer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 22px; margin-top: 16px; }
+    .primary-button { padding: 11px 27px; min-height: 46px; border: 1px solid var(--ink); border-radius: 3px; background: var(--ink); color: #fff; font: 500 16px/1.4 var(--sans); transition: background .15s; }
+    .primary-button:hover:not(:disabled) { background: #343944; }
+    .shortcut { font: 13px var(--mono); color: var(--muted); }
+    .examples { margin-left: auto; display: flex; flex-wrap: wrap; gap: 13px; align-items: center; font-size: 14px; }
+    .examples-label { color: var(--muted); padding-left: 20px; border-left: 1px solid var(--line); }
+    .text-button { border: 0; padding: 4px 0; background: transparent; color: var(--blue); font-size: 14px; }
+    .examples .text-button + .text-button { border-left: 1px solid var(--line); padding-left: 13px; }
+    .feedback { margin-top: 14px; font-size: 14px; color: var(--muted); }
+    .feedback.error { color: var(--red); }
+    .empty { min-height: 170px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 28px 22px; gap: 10px; text-align: center; color: var(--muted); }
+    .empty h3 { font-size: 25px; color: var(--ink); letter-spacing: -.4px; }
+    .empty p { font-size: 15px; }
+    .activity-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 10px 22px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+    .activity-tools select { color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 3px; padding: 3px 6px; font-size: 12px; }
+    .activity-tools label { display: flex; align-items: center; gap: 6px; }
+    input[type="checkbox"] { accent-color: var(--blue); }
+    .activity-count { margin-left: auto; font-family: var(--mono); }
+    .logs { max-height: 350px; overflow: auto; padding: 10px 22px; }
+    .log-row { display: grid; grid-template-columns: 68px 78px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px solid #e8e5de; font-size: 13px; }
+    .log-row:last-child { border-bottom: 0; }
+    .log-time { font: 11px/1.8 var(--mono); color: var(--muted); }
+    .log-tag { font-size: 12px; font-weight: 500; color: var(--blue); }
+    .log-message { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .log-row[data-kind="warning"] .log-tag, .log-row[data-kind="error"] .log-tag { color: var(--red); }
+    .log-row[data-kind="receipt"] .log-tag { color: var(--green); }
+    .agents-list { list-style: none; padding: 0 22px; margin: 0; }
+    .agent-row { min-height: 63px; padding: 17px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .agent-row:last-child { border-bottom: 0; }
+    .agent-name { font: 500 20px/1.4 var(--serif); }
+    .agent-tags { color: var(--muted); font: 13px/1.6 var(--mono); text-align: right; overflow-wrap: anywhere; max-width: 48%; }
+    .shared-section { flex: 1; display: flex; flex-direction: column; }
+    .shared-section .empty { flex: 1; min-height: 280px; }
+    .shared-content { padding: 0 22px; max-height: 480px; overflow: auto; }
+    details { border-bottom: 1px solid var(--line); padding: 14px 0; }
+    details:last-child { border-bottom: 0; }
+    summary { cursor: pointer; font-size: 14px; overflow-wrap: anywhere; }
+    .entry-meta { display: block; margin: 6px 0 10px; font: 11px/1.6 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+    pre { margin: 10px 0 0; font: 12px/1.7 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; color: #363c47; max-height: 250px; overflow: auto; }
+    .receipt-list { padding: 0 22px; max-height: 380px; overflow: auto; }
+    .receipt-summary { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; margin-bottom: 12px; }
+    .receipt-summary strong { font-size: 14px; font-weight: 500; }
+    .receipt-summary time { font: 12px var(--mono); color: var(--muted); }
+    .receipt-note { margin-top: 12px; font-size: 12px; color: var(--muted); }
+    .receipt-fields { margin: 12px 0 0; }
+    .receipt-fields dt { color: var(--muted); font-size: 12px; margin-top: 8px; }
+    .receipt-fields dd { margin: 2px 0 0; font: 12px/1.7 var(--mono); overflow-wrap: anywhere; }
+    .results-section .empty { min-height: 131px; }
+    .footer { margin-top: 21px; border-top: 1px solid var(--line); padding: 13px 0 18px; color: var(--muted); font: 12px var(--mono); }
+    .loading { padding: 28px 22px; color: var(--muted); font-size: 14px; }
+    @media (max-width: 1150px) {
+      .topbar-inner { gap: 42px; }
+      .nav { gap: 26px; }
+      .examples { margin-left: 0; width: 100%; }
+      .examples-label { padding-left: 0; border: 0; }
+      .agent-row { flex-direction: column; gap: 3px; }
+      .agent-tags { max-width: 100%; text-align: left; }
     }
-    .panel {
-      background-color: var(--panel);
-      border: 1px solid var(--border);
+    @media (max-width: 760px) {
+      html { scroll-padding-top: 20px; }
+      .topbar-inner { padding: 20px 22px 0; flex-wrap: wrap; gap: 18px; }
+      .brand { font-size: 30px; }
+      .connection { font-size: 12px; }
+      .nav { order: 3; width: 100%; gap: 30px; min-height: 46px; }
+      .nav a { font-size: 14px; }
+      .page { padding: 28px 20px 0; }
+      h1 { font-size: 43px; letter-spacing: -1px; }
+      .intro p { font-size: 20px; max-width: 310px; }
+      .intro { margin-bottom: 24px; }
+      .workspace { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+      .section-header { padding: 14px 17px; }
+      h2 { font-size: 24px; }
+      .composer { padding: 16px 17px 20px; }
+      textarea { min-height: 145px; font-size: 13px; }
+      .composer-actions { gap: 14px 18px; }
+      .examples { gap: 9px; font-size: 12px; }
+      .examples .text-button { font-size: 12px; }
+      .examples .text-button + .text-button { padding-left: 9px; }
+      .logs { padding: 10px 17px; }
+      .log-row { grid-template-columns: 62px minmax(0, 1fr); gap: 3px 8px; }
+      .log-message { grid-column: 1 / -1; }
+      .activity-tools { padding: 10px 17px; gap: 10px; }
+      .agent-row { flex-direction: row; align-items: baseline; }
+      .agent-tags { max-width: 50%; text-align: right; }
+      .shared-section .empty { min-height: 170px; }
+      .shortcut { font-size: 11px; }
     }
-    .panel-hover:hover {
-      border-color: var(--border-bright);
-    }
-    /* Monospace Terminal Scrollbar */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #07080a; }
-    ::-webkit-scrollbar-thumb { background: #262c37; border-radius: 2px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3c4656; }
-
-    .status-pulse {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-      animation: pulse-ring 2s infinite cubic-bezier(0.66, 0, 0, 1);
-    }
-    @keyframes pulse-ring {
-      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-    .code-block {
-      background: #090a0d;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
   </style>
 </head>
-<body class="min-h-screen flex flex-col text-[13px] selection:bg-accent-indigo selection:text-white">
-
-  <!-- Top Navigation Bar -->
-  <header class="border-b border-dark-800 bg-dark-900/90 backdrop-blur sticky top-0 z-50 h-13 px-4 flex items-center justify-between">
-    <div class="flex items-center space-x-4">
-      <div class="flex items-center space-x-2.5">
-        <div class="w-6 h-6 rounded bg-dark-800 border border-dark-700 flex items-center justify-center font-mono font-bold text-xs text-white tracking-widest">
-          N
-        </div>
-        <span class="font-semibold text-white tracking-tight text-sm font-mono">NEXUS</span>
-        <span class="text-dark-600">/</span>
-        <span class="text-xs text-slate-400 font-mono">runtime-v1.0</span>
-      </div>
-
-      <div class="hidden md:flex items-center space-x-2 pl-3 border-l border-dark-800">
-        <span id="system-status-indicator" class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[11px] font-mono bg-dark-800 border border-dark-750 text-slate-300">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 status-pulse"></span>
-          <span id="system-status-text">DAEMON_READY</span>
-        </span>
-        <span class="text-[11px] font-mono text-slate-500">LATENCY <span class="text-slate-300 font-mono" id="stat-latency">&lt;2ms</span></span>
-        <span class="text-dark-600">|</span>
-        <span class="text-[11px] font-mono text-slate-500">SANDBOX <span class="text-slate-300 font-mono">bwrap-active</span></span>
-      </div>
-    </div>
-
-    <div class="flex items-center space-x-3">
-      <!-- Live WS Indicator -->
-      <div id="ws-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded border border-dark-750 bg-dark-850 text-slate-300 font-mono text-[11px]">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-        <span id="ws-label">WS: CONNECTED</span>
-      </div>
-
-      <!-- Quick Action Docs -->
-      <a href="https://github.com/vinay3254/nexus" target="_blank" class="px-2.5 py-1 rounded border border-dark-750 hover:border-dark-600 bg-dark-850 hover:bg-dark-800 text-slate-300 font-mono text-[11px] transition">
-        GitHub ↗
-      </a>
+<body>
+  <a class="skip-link" href="#workspace">Skip to workspace</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#workspace" aria-label="Nexus workspace">Nexus</a>
+      <nav class="nav" aria-label="Workspace navigation">
+        <a href="#workspace" aria-current="location">Workspace</a>
+        <a href="#agents">Agents</a>
+        <a href="#blackboard">Blackboard</a>
+      </nav>
+      <div class="connection" id="connection" data-state="connecting" role="status">Connecting…</div>
     </div>
   </header>
-
-  <!-- Metric Strip -->
-  <div class="border-b border-dark-800 bg-dark-950 px-4 py-2.5 grid grid-cols-2 md:grid-cols-4 gap-3">
-    <div class="flex items-center justify-between px-3 py-1.5 rounded bg-dark-900 border border-dark-800">
-      <span class="text-[11px] font-mono text-slate-400 uppercase">App Store Workers</span>
-      <div class="flex items-baseline space-x-1">
-        <span id="stat-agents" class="font-mono font-bold text-sm text-white">4</span>
-        <span class="text-[10px] text-emerald-400 font-mono">online</span>
-      </div>
+  <main class="page" id="workspace" tabindex="-1">
+    <div class="intro">
+      <h1>Agent workspace</h1>
+      <p>Run a task. Follow the work. Inspect the result.</p>
     </div>
-
-    <div class="flex items-center justify-between px-3 py-1.5 rounded bg-dark-900 border border-dark-800">
-      <span class="text-[11px] font-mono text-slate-400 uppercase">Blackboard Records</span>
-      <div class="flex items-baseline space-x-1">
-        <span id="stat-blackboard" class="font-mono font-bold text-sm text-white">0</span>
-        <span class="text-[10px] text-slate-500 font-mono">synced</span>
-      </div>
-    </div>
-
-    <div class="flex items-center justify-between px-3 py-1.5 rounded bg-dark-900 border border-dark-800">
-      <span class="text-[11px] font-mono text-slate-400 uppercase">Sandbox Executions</span>
-      <div class="flex items-baseline space-x-1">
-        <span id="stat-sandboxes" class="font-mono font-bold text-sm text-white">0</span>
-        <span class="text-[10px] text-accent-indigo font-mono">isolated</span>
-      </div>
-    </div>
-
-    <div class="flex items-center justify-between px-3 py-1.5 rounded bg-dark-900 border border-dark-800">
-      <span class="text-[11px] font-mono text-slate-400 uppercase">Signed Proofs</span>
-      <div class="flex items-baseline space-x-1">
-        <span id="stat-receipts" class="font-mono font-bold text-sm text-white">0</span>
-        <span class="text-[10px] text-emerald-400 font-mono">ed25519</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main Grid Workspace -->
-  <main class="flex-1 px-4 py-4 max-w-[1600px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
-
-    <!-- Left Column: Command Bar, Interactive Demos, Live Execution Terminal (8 cols) -->
-    <div class="lg:col-span-8 flex flex-col space-y-4">
-
-      <!-- Command Bar Panel -->
-      <div class="panel rounded-lg p-3">
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center space-x-2">
-            <span class="w-2 h-2 rounded-full bg-accent-indigo"></span>
-            <span class="text-xs font-semibold tracking-wider uppercase text-slate-300 font-mono">Orchestration Prompt & Dispatch</span>
-          </div>
-          <span class="text-[11px] text-slate-500 font-mono">Press ↵ Enter to dispatch</span>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <div class="relative flex-1">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-slate-500 text-xs">$&gt;</span>
-            <input
-              id="task-input"
-              type="text"
-              placeholder="e.g. Clean transactions CSV, run forecast regression in Python, and verify sandbox"
-              class="w-full bg-dark-950 border border-dark-750 focus:border-accent-indigo rounded py-2 pl-8 pr-3 text-xs text-white placeholder-slate-600 outline-none font-mono transition"
-            />
-          </div>
-          <button
-            id="btn-run"
-            onclick="dispatchTask()"
-            class="px-4 py-2 bg-dark-800 hover:bg-dark-750 border border-dark-700 hover:border-slate-500 text-white rounded text-xs font-mono font-medium transition flex items-center space-x-1.5 shrink-0"
-          >
-            <span>Dispatch</span>
-            <span class="text-slate-400 text-[10px]">↵</span>
-          </button>
-        </div>
-
-        <!-- Quick Scenario Chips -->
-        <div class="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-dark-800 text-[11px] font-mono">
-          <span class="text-slate-500 mr-1">PRESETS:</span>
-          <button onclick="setPromptAndRun('Run Self-Healing Security Guard demo: inject faulty code, catch error, and test iterative repair')" class="px-2 py-0.5 rounded bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 transition">
-            🛡️ Self-Heal Demo
-          </button>
-          <button onclick="setPromptAndRun('Analyze Q3 financial trends, clean sales dataset, and generate python forecast script')" class="px-2 py-0.5 rounded bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 transition">
-            ⚡ Multi-Agent Pipeline
-          </button>
-          <button onclick="setPromptAndRun('Research kubernetes deployment manifests and write automated verification script')" class="px-2 py-0.5 rounded bg-dark-850 hover:bg-dark-800 border border-dark-750 text-slate-300 transition">
-            🐳 Ops & Verification
-          </button>
-        </div>
-      </div>
-
-      <!-- Live Mission Terminal -->
-      <div class="panel rounded-lg flex-1 flex flex-col min-h-[500px]">
-        <!-- Terminal Header -->
-        <div class="px-3 py-2 border-b border-dark-800 flex items-center justify-between bg-dark-900/60">
-          <div class="flex items-center space-x-3">
-            <div class="flex space-x-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-dark-750 border border-dark-700"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-dark-750 border border-dark-700"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-dark-750 border border-dark-700"></span>
+    <div class="workspace">
+      <div class="primary-column">
+        <section class="section" aria-labelledby="new-task-heading">
+          <div class="section-header"><h2 id="new-task-heading">New task</h2></div>
+          <form class="composer" id="task-form">
+            <textarea id="task-input" aria-label="Describe your task" placeholder="Describe what you want your agents to do…" required maxlength="20000" aria-describedby="task-feedback"></textarea>
+            <div class="composer-actions">
+              <button class="primary-button" type="submit" id="btn-run">Run task</button>
+              <span class="shortcut" aria-hidden="true">Ctrl + Enter</span>
+              <div class="examples">
+                <span class="examples-label">Examples:</span>
+                <button class="text-button" type="button" data-prompt="Analyze sales data and write a summary report">Analyze data</button>
+                <button class="text-button" type="button" data-prompt="Research multi-agent orchestration and summarize the findings">Research a topic</button>
+              </div>
             </div>
-            <span class="text-xs font-mono text-slate-400">nexus-telemetry.stream</span>
+            <p class="feedback" id="task-feedback" role="status" hidden></p>
+          </form>
+        </section>
+        <section class="section" aria-labelledby="activity-heading">
+          <div class="section-header"><h2 id="activity-heading">Activity</h2><button type="button" class="text-button" id="clear-logs">Clear</button></div>
+          <div class="activity-tools" id="activity-tools" hidden>
+            <label>Show <select id="log-filter"><option value="all">All events</option><option value="sandbox">Sandbox</option><option value="receipt">Receipts</option></select></label>
+            <label><input type="checkbox" id="auto-scroll" checked>Auto-scroll</label>
+            <span class="activity-count" id="activity-count">0 events</span>
           </div>
-
-          <div class="flex items-center space-x-2 text-[11px] font-mono">
-            <button onclick="filterLogs('all')" id="btn-filter-all" class="px-2 py-0.5 rounded bg-dark-750 text-white border border-dark-700">ALL</button>
-            <button onclick="filterLogs('sandbox')" id="btn-filter-sandbox" class="px-2 py-0.5 rounded bg-dark-850 text-slate-400 hover:text-white border border-dark-800">SANDBOX</button>
-            <button onclick="filterLogs('receipt')" id="btn-filter-receipt" class="px-2 py-0.5 rounded bg-dark-850 text-slate-400 hover:text-white border border-dark-800">RECEIPTS</button>
-            <button onclick="clearLogs()" class="px-2 py-0.5 rounded bg-dark-850 text-slate-500 hover:text-slate-300 border border-dark-800 transition">CLEAR</button>
-          </div>
-        </div>
-
-        <!-- Terminal Output Screen -->
-        <div id="terminal-screen" class="flex-1 p-3 overflow-y-auto font-mono text-[11.5px] leading-relaxed space-y-1 bg-dark-950 text-slate-300">
-          <div class="text-slate-600 italic">// Nexus Daemon connected. Ready to orchestrate agents...</div>
-        </div>
-
-        <!-- Terminal Bottom Info -->
-        <div class="px-3 py-1.5 border-t border-dark-800 bg-dark-900/80 flex items-center justify-between text-[11px] font-mono text-slate-500">
-          <span id="terminal-stats">EVENTS: 1 | BUFFER: 1000 lines</span>
-          <span class="flex items-center space-x-2">
-            <label class="cursor-pointer flex items-center space-x-1">
-              <input type="checkbox" id="chk-autoscroll" checked class="rounded border-dark-700 bg-dark-900 text-accent-indigo">
-              <span>Auto-scroll</span>
-            </label>
-          </span>
-        </div>
+          <div class="empty" id="activity-empty"><h3>Ready when you are</h3><p>Your task activity will appear here.</p></div>
+          <div class="logs" id="logs" role="log" aria-label="Task activity" aria-live="polite" aria-relevant="additions" hidden></div>
+          <p class="loading" id="filter-empty" hidden>No events match this filter.</p>
+        </section>
+        <section class="section results-section" aria-labelledby="results-heading">
+          <div class="section-header"><h2 id="results-heading">Results &amp; receipts</h2></div>
+          <div class="empty" id="results-empty"><p>Run a task to inspect its output and signed receipt.</p></div>
+          <div class="receipt-list" id="receipts" aria-live="polite"></div>
+        </section>
       </div>
-
+      <aside class="reference-column" aria-label="Agents and shared outputs">
+        <section class="section" id="agents" aria-labelledby="agents-heading" tabindex="-1">
+          <div class="section-header"><h2 id="agents-heading">Registered agents</h2></div>
+          <p class="loading" id="agents-message" role="status">Loading agents…</p>
+          <ul class="agents-list" id="agents-list"></ul>
+        </section>
+        <section class="section shared-section" id="blackboard" aria-labelledby="shared-heading" tabindex="-1">
+          <div class="section-header"><h2 id="shared-heading">Shared outputs</h2></div>
+          <div class="empty" id="shared-empty"><p id="shared-message" role="status">No shared outputs yet.</p></div>
+          <div class="shared-content" id="shared-content"></div>
+        </section>
+      </aside>
     </div>
-
-    <!-- Right Column: App Store Matrix & Live Blackboard (4 cols) -->
-    <div class="lg:col-span-4 flex flex-col space-y-4">
-
-      <!-- App Store Worker Registry Panel -->
-      <div class="panel rounded-lg p-3">
-        <div class="flex items-center justify-between pb-2 border-b border-dark-800 mb-2.5">
-          <div class="flex items-center space-x-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">App Store Workers</span>
-          </div>
-          <span class="text-[10px] font-mono text-slate-500">DYNAMIC DISCOVERY</span>
-        </div>
-
-        <div id="workers-container" class="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-          <div class="text-slate-500 font-mono text-xs italic">Loading catalog...</div>
-        </div>
-      </div>
-
-      <!-- Shared Memory Blackboard Panel -->
-      <div class="panel rounded-lg p-3 flex-1 flex flex-col">
-        <div class="flex items-center justify-between pb-2 border-b border-dark-800 mb-2.5">
-          <div class="flex items-center space-x-2">
-            <span class="w-2 h-2 rounded-full bg-accent-amber"></span>
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">Shared Memory Blackboard</span>
-          </div>
-          <span class="text-[10px] font-mono text-slate-500" id="bb-rev-label">REVS: 0</span>
-        </div>
-
-        <div id="blackboard-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[300px]">
-          <div class="text-slate-500 font-mono text-xs italic">No blackboard keys published yet.</div>
-        </div>
-      </div>
-
-      <!-- Verified Cryptographic Proofs Panel -->
-      <div class="panel rounded-lg p-3">
-        <div class="flex items-center justify-between pb-2 border-b border-dark-800 mb-2">
-          <div class="flex items-center space-x-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-300 font-mono">Cryptographic Proofs</span>
-          </div>
-          <span class="text-[10px] font-mono text-emerald-400">ED25519 VERIFIED</span>
-        </div>
-
-        <div id="receipt-preview" class="code-block p-2.5 rounded font-mono text-[11px] space-y-1.5 text-slate-400">
-          <div class="flex justify-between text-slate-500">
-            <span>STATUS:</span>
-            <span id="proof-status" class="text-slate-400">WAITING_EXECUTION</span>
-          </div>
-          <div class="truncate">
-            <span class="text-slate-500">DIGEST:</span>
-            <span id="proof-digest" class="text-slate-300">none</span>
-          </div>
-          <div class="truncate">
-            <span class="text-slate-500">SIG:</span>
-            <span id="proof-sig" class="text-slate-300">none</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
+    <footer class="footer">Nexus · Agent orchestration</footer>
   </main>
-
-  <!-- Interactive JavaScript Logic -->
   <script>
-    let ws;
-    let eventCount = 0;
-    let sandboxesTotal = 0;
-    let proofsTotal = 0;
-    let currentFilter = 'all';
-
-    function initWebSocket() {
-      const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${proto}//${window.location.host}/ws`;
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        document.getElementById('ws-badge').className = "flex items-center space-x-1.5 px-2.5 py-1 rounded border border-emerald-800 bg-emerald-950/40 text-emerald-400 font-mono text-[11px]";
-        document.getElementById('ws-label').innerText = "WS: LIVE";
-        appendLog('SYSTEM', 'WebSocket duplex channel established.', 'text-emerald-400');
-        fetchInitialData();
-      };
-
-      ws.onmessage = (event) => {
+    (() => {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const state = { socket: null, sending: false, events: [], filter: 'all', retry: 0, stopped: false, boardRequest: 0 };
+      const MAX_EVENTS = 300;
+      const MAX_RECEIPTS = 20;
+      function element(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = String(text);
+        return node;
+      }
+      function feedback(message, isError = false) {
+        $('task-feedback').textContent = message;
+        $('task-feedback').className = isError ? 'feedback error' : 'feedback';
+        $('task-feedback').hidden = !message;
+      }
+      function setConnection(status, message) {
+        $('connection').dataset.state = status;
+        $('connection').textContent = message;
+      }
+      function renderEvents() {
+        const visible = state.events.filter(event => state.filter === 'all' || event.kind === state.filter);
+        const fragment = document.createDocumentFragment();
+        for (const event of visible) {
+          const row = element('div', 'log-row');
+          row.dataset.kind = event.kind;
+          row.append(element('time', 'log-time', event.time), element('span', 'log-tag', event.label), element('span', 'log-message', event.message));
+          fragment.append(row);
+        }
+        $('logs').replaceChildren(fragment);
+        $('logs').hidden = !visible.length;
+        $('activity-empty').hidden = state.events.length > 0;
+        $('activity-tools').hidden = !state.events.length;
+        $('filter-empty').hidden = !state.events.length || visible.length > 0;
+        $('activity-count').textContent = `${state.events.length} ${state.events.length === 1 ? 'event' : 'events'}`;
+        if ($('auto-scroll').checked) $('logs').scrollTop = $('logs').scrollHeight;
+      }
+      function log(kind, label, message) {
+        state.events.push({ kind, label, message: String(message).slice(0, 12000), time: new Date().toLocaleTimeString([], { hour12: false }) });
+        if (state.events.length > MAX_EVENTS) state.events.shift();
+        renderEvents();
+      }
+      async function getJSON(url) {
+        const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!response.ok) throw new Error(`Request failed (${response.status})`);
+        return response.json();
+      }
+      async function loadAgents() {
         try {
-          const data = JSON.parse(event.data);
-          processWsMessage(data);
-        } catch (e) {
-          appendLog('RAW', event.data, 'text-slate-400');
-        }
-      };
-
-      ws.onclose = () => {
-        document.getElementById('ws-badge').className = "flex items-center space-x-1.5 px-2.5 py-1 rounded border border-rose-900 bg-rose-950/40 text-rose-400 font-mono text-[11px]";
-        document.getElementById('ws-label').innerText = "WS: RECONNECTING";
-        setTimeout(initWebSocket, 2000);
-      };
-    }
-
-    function processWsMessage(data) {
-      if (data.type === 'log') {
-        const msg = data.message;
-        let tag = 'ROUTER';
-        let color = 'text-slate-300';
-        if (msg.includes('⚡')) { tag = 'DISPATCH'; color = 'text-accent-indigo'; }
-        else if (msg.includes('✅')) { tag = 'SUCCESS'; color = 'text-emerald-400'; }
-        else if (msg.includes('⚠️')) { tag = 'WARN'; color = 'text-amber-400'; }
-        appendLog(tag, msg, color);
-      } else if (data.type === 'blackboard_update') {
-        appendLog('BLACKBOARD', `${data.author} updated '${data.key}' (v${data.version})`, 'text-accent-amber');
-        fetchBlackboard();
-      } else if (data.type === 'sandbox_event') {
-        sandboxesTotal++;
-        document.getElementById('stat-sandboxes').innerText = sandboxesTotal;
-        appendLog('SANDBOX', data.message, 'text-sky-400');
-      } else if (data.type === 'receipt') {
-        proofsTotal++;
-        document.getElementById('stat-receipts').innerText = proofsTotal;
-        document.getElementById('proof-status').innerText = "VERIFIED_VALID";
-        document.getElementById('proof-status').className = "text-emerald-400 font-bold";
-        document.getElementById('proof-digest').innerText = data.payload_digest.substring(0, 24) + '...';
-        document.getElementById('proof-sig').innerText = data.signature.substring(0, 28) + '...';
-        appendLog('CRYPTO', `Signed receipt: SHA256:${data.payload_digest.substring(0, 16)}... | Ed25519 confirmed`, 'text-emerald-400');
-      }
-    }
-
-    function appendLog(tag, text, textColorClass) {
-      eventCount++;
-      document.getElementById('terminal-stats').innerText = `EVENTS: ${eventCount} | BUFFER: 1000 lines`;
-
-      const screen = document.getElementById('terminal-screen');
-      const now = new Date().toISOString().substring(11, 19);
-
-      const row = document.createElement('div');
-      row.className = `flex items-start space-x-2 py-0.5 hover:bg-dark-900 px-1 rounded transition ${textColorClass}`;
-      row.dataset.tag = tag.toLowerCase();
-
-      if (currentFilter !== 'all' && row.dataset.tag !== currentFilter) {
-        row.style.display = 'none';
-      }
-
-      row.innerHTML = `
-        <span class="text-slate-600 select-none">${now}</span>
-        <span class="px-1 rounded bg-dark-850 border border-dark-750 text-[10px] font-mono text-slate-400 shrink-0 font-medium">[${tag}]</span>
-        <span class="flex-1 break-words">${escapeHtml(text)}</span>
-      `;
-      screen.appendChild(row);
-
-      if (document.getElementById('chk-autoscroll').checked) {
-        screen.scrollTop = screen.scrollHeight;
-      }
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-
-    function clearLogs() {
-      document.getElementById('terminal-screen').innerHTML = '<div class="text-slate-600 italic">// Terminal buffer cleared.</div>';
-      eventCount = 0;
-      document.getElementById('terminal-stats').innerText = `EVENTS: 0 | BUFFER: 1000 lines`;
-    }
-
-    function filterLogs(filter) {
-      currentFilter = filter;
-      ['all', 'sandbox', 'receipt'].forEach(f => {
-        const btn = document.getElementById(`btn-filter-${f}`);
-        if (btn) {
-          if (f === filter) {
-            btn.className = "px-2 py-0.5 rounded bg-dark-750 text-white border border-dark-700";
-          } else {
-            btn.className = "px-2 py-0.5 rounded bg-dark-850 text-slate-400 hover:text-white border border-dark-800";
+          const agents = await getJSON('/api/agents');
+          const fragment = document.createDocumentFragment();
+          for (const agent of agents) {
+            const row = element('li', 'agent-row');
+            const name = element('span', 'agent-name', agent.name);
+            name.title = `${agent.id} · v${agent.version} · ${agent.timeout_secs}s timeout`;
+            const tags = element('span', 'agent-tags', agent.capabilities.slice(0, 2).join(' · '));
+            tags.title = agent.capabilities.join(' · ');
+            row.append(name, tags);
+            fragment.append(row);
           }
+          $('agents-list').replaceChildren(fragment);
+          $('agents-message').hidden = agents.length > 0;
+          $('agents-message').textContent = 'No agents registered.';
+        } catch (_) {
+          $('agents-message').hidden = false;
+          $('agents-message').textContent = 'Could not load agents. Reconnect or refresh to retry.';
         }
-      });
-
-      const rows = document.querySelectorAll('#terminal-screen > div');
-      rows.forEach(r => {
-        if (!r.dataset.tag) return;
-        if (filter === 'all' || r.dataset.tag === filter) {
-          r.style.display = 'flex';
-        } else {
-          r.style.display = 'none';
+      }
+      async function loadBlackboard() {
+        const request = ++state.boardRequest;
+        try {
+          const entries = await getJSON('/api/blackboard');
+          if (request !== state.boardRequest) return;
+          const opened = new Set(Array.from($('shared-content').querySelectorAll('details[open]'), node => node.dataset.key));
+          const fragment = document.createDocumentFragment();
+          for (const entry of entries) {
+            const detail = element('details');
+            detail.dataset.key = entry.key;
+            detail.open = opened.has(entry.key);
+            detail.append(element('summary', '', entry.key));
+            detail.append(element('span', 'entry-meta', `${entry.author} · version ${entry.version}`));
+            detail.append(element('pre', '', typeof entry.value === 'object' ? JSON.stringify(entry.value, null, 2) : String(entry.value)));
+            fragment.append(detail);
+          }
+          $('shared-content').replaceChildren(fragment);
+          $('shared-empty').hidden = entries.length > 0;
+          $('shared-message').textContent = 'No shared outputs yet.';
+        } catch (_) {
+          if (request !== state.boardRequest) return;
+          $('shared-empty').hidden = false;
+          $('shared-message').textContent = 'Could not refresh shared outputs. Reconnect or refresh to retry.';
         }
-      });
-    }
-
-    async function fetchInitialData() {
-      await fetchAgents();
-      await fetchBlackboard();
-    }
-
-    async function fetchAgents() {
-      try {
-        const res = await fetch('/api/agents');
-        const agents = await res.json();
-        document.getElementById('stat-agents').innerText = agents.length;
-
-        const container = document.getElementById('workers-container');
-        container.innerHTML = '';
-        agents.forEach(a => {
-          const card = document.createElement('div');
-          card.className = 'p-2 rounded bg-dark-950 border border-dark-800 hover:border-dark-700 transition font-mono text-xs';
-          card.innerHTML = `
-            <div class="flex items-center justify-between">
-              <span class="font-medium text-slate-200">${a.name}</span>
-              <span class="text-[10px] text-emerald-400 bg-emerald-950/40 px-1 rounded border border-emerald-900/60">ACTIVE</span>
-            </div>
-            <div class="text-slate-500 text-[11px] mt-0.5">${a.id} • ${a.timeout_secs}s timeout</div>
-            <div class="flex flex-wrap gap-1 mt-1.5">
-              ${a.capabilities.map(c => `<span class="px-1 py-0.2 bg-dark-850 text-slate-400 border border-dark-750 rounded text-[9.5px]">#${c}</span>`).join('')}
-            </div>
-          `;
-          container.appendChild(card);
-        });
-      } catch (e) {}
-    }
-
-    async function fetchBlackboard() {
-      try {
-        const res = await fetch('/api/blackboard');
-        const entries = await res.json();
-        document.getElementById('stat-blackboard').innerText = entries.length;
-        document.getElementById('bb-rev-label').innerText = `KEYS: ${entries.length}`;
-
-        const container = document.getElementById('blackboard-container');
-        container.innerHTML = '';
-        if (entries.length === 0) {
-          container.innerHTML = '<div class="text-slate-500 font-mono text-xs italic">No blackboard keys published yet.</div>';
+      }
+      function showReceipt(data) {
+        $('results-empty').hidden = true;
+        const detail = element('details');
+        detail.open = true;
+        detail.append(element('summary', '', 'Signed receipt received'));
+        const summary = element('div', 'receipt-summary');
+        summary.append(element('strong', '', data.task_id), element('time', '', new Date(data.timestamp).toLocaleString()));
+        detail.append(summary);
+        const fields = element('dl', 'receipt-fields');
+        for (const [label, value] of [['Payload digest · SHA-256', data.payload_digest], ['Signature · Ed25519', data.signature]]) {
+          fields.append(element('dt', '', label), element('dd', '', value));
+        }
+        detail.append(fields, element('p', 'receipt-note', 'Inspect agent outputs in Shared outputs. Signature received; not independently verified in this browser.'));
+        $('receipts').prepend(detail);
+        while ($('receipts').children.length > MAX_RECEIPTS) $('receipts').lastChild.remove();
+      }
+      function onMessage(data) {
+        if (data.type === 'log') {
+          const message = String(data.message || '');
+          const warning = /⚠|error|failed/i.test(message);
+          log(warning ? 'warning' : 'activity', warning ? 'Notice' : 'Activity', message.replace(/^[\p{Extended_Pictographic}\uFE0F\s]+/u, ''));
+        } else if (data.type === 'blackboard_update') {
+          log('output', 'Output', `${data.author} updated ${data.key} (v${data.version})`);
+          loadBlackboard();
+        } else if (data.type === 'sandbox_event') {
+          log('sandbox', 'Sandbox', data.message);
+        } else if (data.type === 'receipt') {
+          showReceipt(data);
+          log('receipt', 'Receipt', 'Signed execution receipt received.');
+          loadBlackboard();
+        }
+      }
+      function connect() {
+        if (state.stopped) return;
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const socket = new WebSocket(`${protocol}//${location.host}/ws`);
+        state.socket = socket;
+        socket.onopen = () => {
+          state.retry = 0;
+          setConnection('connected', 'Connected');
+          loadAgents();
+          loadBlackboard();
+        };
+        socket.onmessage = event => {
+          try { onMessage(JSON.parse(event.data)); }
+          catch (_) { log('error', 'Notice', 'An activity update could not be displayed.'); }
+        };
+        socket.onclose = () => {
+          if (state.stopped) return;
+          setConnection('disconnected', 'Reconnecting…');
+          setTimeout(connect, Math.min(1000 * 2 ** state.retry++, 10000));
+        };
+        socket.onerror = () => setConnection('disconnected', 'Connection unavailable');
+      }
+      async function dispatch(event) {
+        event.preventDefault();
+        if (state.sending) return;
+        const task = $('task-input').value.trim();
+        if (!task) { feedback('Describe a task before running it.', true); $('task-input').focus(); return; }
+        if (!navigator.onLine || !state.socket || state.socket.readyState !== WebSocket.OPEN) {
+          feedback('Connection unavailable. Your task is saved here; try again once connected.', true);
           return;
         }
-
-        entries.forEach(e => {
-          const item = document.createElement('div');
-          item.className = 'p-2 rounded bg-dark-950 border border-dark-800 text-xs font-mono';
-          item.innerHTML = `
-            <div class="flex items-center justify-between text-accent-amber font-semibold">
-              <span>${e.key}</span>
-              <span class="text-slate-500 text-[10px]">v${e.version}</span>
-            </div>
-            <div class="text-slate-300 text-[11px] mt-1 bg-dark-900 p-1.5 rounded border border-dark-850 break-words font-mono">
-              ${escapeHtml(typeof e.value === 'object' ? JSON.stringify(e.value) : String(e.value))}
-            </div>
-            <div class="text-[10px] text-slate-500 mt-1 flex justify-between">
-              <span>author: ${e.author}</span>
-            </div>
-          `;
-          container.appendChild(item);
-        });
-      } catch (e) {}
-    }
-
-    async function dispatchTask() {
-      const input = document.getElementById('task-input');
-      const task = input.value.trim();
-      if (!task) return;
-
-      input.value = '';
-      appendLog('DISPATCH', `Dispatched user task: "${task}"`, 'text-white font-medium');
-
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action: 'run_task', task: task }));
-      } else {
-        await fetch('/api/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task: task })
-        });
+        state.sending = true;
+        $('btn-run').disabled = true;
+        $('btn-run').textContent = 'Sending…';
+        feedback('');
+        try {
+          const response = await fetch('/api/run', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task }), signal: AbortSignal.timeout(10000)
+          });
+          if (!response.ok) throw new Error(`Server returned ${response.status}`);
+          feedback('Task dispatched. Follow its activity below.');
+        } catch (error) {
+          const uncertain = error.name === 'TimeoutError' || error instanceof TypeError;
+          feedback(uncertain ? 'No confirmation received. Check activity before retrying; your task may have started.' : `Could not dispatch task. ${error.message}. Your prompt is preserved.`, true);
+        } finally {
+          state.sending = false;
+          $('btn-run').disabled = false;
+          $('btn-run').textContent = 'Run task';
+        }
       }
-    }
-
-    function setPromptAndRun(prompt) {
-      document.getElementById('task-input').value = prompt;
-      dispatchTask();
-    }
-
-    document.getElementById('task-input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        dispatchTask();
-      }
-    });
-
-    window.onload = initWebSocket;
+      $('task-form').addEventListener('submit', dispatch);
+      $('task-input').addEventListener('keydown', event => {
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          $('task-form').requestSubmit();
+        }
+      });
+      document.querySelectorAll('[data-prompt]').forEach(button => button.addEventListener('click', () => {
+        $('task-input').value = button.dataset.prompt;
+        $('task-input').focus();
+        feedback('');
+      }));
+      $('clear-logs').addEventListener('click', () => { state.events = []; state.filter = 'all'; $('log-filter').value = 'all'; renderEvents(); });
+      $('log-filter').addEventListener('change', event => { state.filter = event.target.value; renderEvents(); });
+      document.querySelectorAll('.nav a').forEach(link => link.addEventListener('click', () => {
+        document.querySelectorAll('.nav a').forEach(item => item.removeAttribute('aria-current'));
+        link.setAttribute('aria-current', 'location');
+      }));
+      window.addEventListener('pagehide', () => { state.stopped = true; if (state.socket) state.socket.close(); });
+      window.addEventListener('pageshow', event => { if (event.persisted) { state.stopped = false; connect(); } });
+      window.addEventListener('offline', () => setConnection('disconnected', 'Offline'));
+      window.addEventListener('online', () => {
+        if (state.socket && state.socket.readyState === WebSocket.OPEN) {
+          setConnection('connected', 'Connected');
+          loadAgents();
+          loadBlackboard();
+        } else { setConnection('disconnected', 'Reconnecting…'); }
+      });
+      loadAgents();
+      loadBlackboard();
+      connect();
+    })();
   </script>
 </body>
 </html>
