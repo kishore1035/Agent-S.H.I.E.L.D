@@ -96,12 +96,12 @@
 - `MissionTerminal`: Monospace streaming telemetry with log filters (`ALL`, `ROUTER`, `SANDBOX`, `CRYPTO`)
 - `HealingInspector`: Visual breakdown of faulty code, container stderr, and healed output
 
-- [ ] **Step 1: Implement TaskComposer with presets**
-- [ ] **Step 2: Implement ExecutionDag with animated state transitions**
-- [ ] **Step 3: Implement MissionTerminal with category filtering**
-- [ ] **Step 4: Implement HealingInspector**
-- [ ] **Step 5: Verify build**
-- [ ] **Step 6: Commit**
+- [x] **Step 1: Implement TaskComposer with presets**
+- [x] **Step 2: Implement ExecutionDag with animated state transitions**
+- [x] **Step 3: Implement MissionTerminal with category filtering**
+- [x] **Step 4: Implement HealingInspector**
+- [x] **Step 5: Verify build**
+- [x] **Step 6: Commit**
 
 ---
 
@@ -116,11 +116,11 @@
 - `BlackboardTable`: Key-value store with revision badges and formatted JSON viewer
 - `ReceiptCard`: Ed25519 signature proof card with SHA-256 payload digest and verification badge
 
-- [ ] **Step 1: Implement WorkerMatrix component**
-- [ ] **Step 2: Implement BlackboardTable component**
-- [ ] **Step 3: Implement ReceiptCard component**
-- [ ] **Step 4: Verify build**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Implement WorkerMatrix component**
+- [x] **Step 2: Implement BlackboardTable component**
+- [x] **Step 3: Implement ReceiptCard component**
+- [x] **Step 4: Verify build**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -131,11 +131,11 @@
 - Modify: `nexus/server/app.py`
 - Modify: `tests/test_server.py`
 
-- [ ] **Step 1: Assemble full React App with tab routing and reactive state**
-- [ ] **Step 2: Run npm run build to generate frontend/dist**
-- [ ] **Step 3: Update nexus/server/app.py to mount frontend/dist if present**
-- [ ] **Step 4: Run test_server.py to verify SPA serving**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Assemble full React App with tab routing and reactive state**
+- [x] **Step 2: Run npm run build to generate frontend/dist**
+- [x] **Step 3: Update nexus/server/app.py to mount frontend/dist if present**
+- [x] **Step 4: Run test_server.py to verify SPA serving**
+- [x] **Step 5: Commit**
 
 ---
 
@@ -144,7 +144,7 @@
 - Test: `npm run build`
 - Test: `uv run pytest -v`
 
-- [ ] **Step 1: Run complete frontend build**
-- [ ] **Step 2: Run full backend test suite (24 tests)**
-- [ ] **Step 3: Test live server boot and HTML response**
-- [ ] **Step 4: Commit and push to origin main**
+- [x] **Step 1: Run complete frontend build**
+- [x] **Step 2: Run full backend test suite (24 tests)**
+- [x] **Step 3: Test live server boot and HTML response**
+- [x] **Step 4: Commit and push to origin main**
