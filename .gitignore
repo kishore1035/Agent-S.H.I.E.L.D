@@ -32,3 +32,5 @@ venv.bak/
 htmlcov/
 *.log
 .DS_Store
+
+.superpowers/
