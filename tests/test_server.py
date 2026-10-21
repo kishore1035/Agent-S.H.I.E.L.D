@@ -1,4 +1,4 @@
-from pathlib import Path
+import re
 import pytest
 from httpx import AsyncClient, ASGITransport
 from nexus.server.app import create_app
@@ -51,20 +51,19 @@ async def test_server_spa_serving():
         assert resp.status_code == 200
         assert "Nexus" in resp.text
 
-        dist_path = Path(__file__).resolve().parents[1] / "frontend" / "dist"
-        if (dist_path / "index.html").exists():
-            assert "root" in resp.text
-            # Verify static assets mounting
-            assets_dir = dist_path / "assets"
-            if assets_dir.is_dir():
-                js_files = list(assets_dir.glob("*.js"))
-                if js_files:
-                    asset_resp = await client.get(f"/assets/{js_files[0].name}")
-                    assert asset_resp.status_code == 200
-                    assert len(asset_resp.text) > 0
-                css_files = list(assets_dir.glob("*.css"))
-                if css_files:
-                    css_resp = await client.get(f"/assets/{css_files[0].name}")
-                    assert css_resp.status_code == 200
-                    assert len(css_resp.text) > 0
+        assert "/src/main.ts" not in resp.text
+        assets = re.findall(r'(?:src|href)="(/assets/[^\"]+)"', resp.text)
+        assert any(asset.endswith(".js") for asset in assets)
+        assert any(asset.endswith(".css") for asset in assets)
+        for asset in assets:
+            asset_resp = await client.get(asset)
+            assert asset_resp.status_code == 200
+            assert len(asset_resp.content) > 0
+            expected = "javascript" if asset.endswith(".js") else "text/css"
+            assert expected in asset_resp.headers["content-type"]
 
+        for route in ["/dashboard", "/min", "/next", "/workspace", "/agents", "/executions",
+                      "/blackboard", "/execution-inspector", "/trust", "/runtime"]:
+            page = await client.get(route)
+            assert page.status_code == 200
+            assert page.text == resp.text

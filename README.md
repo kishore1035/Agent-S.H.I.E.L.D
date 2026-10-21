@@ -14,7 +14,7 @@ Nexus is an enterprise-grade, resilient runtime and orchestration engine for spe
 * **📋 Shared Memory Blackboard:** All agents read from and write to a single live digital notebook with async pub/sub event broadcasting and optional SQLite WAL persistence, stopping agents from wasting compute and API budget repeating each other's work.
 * **🛡️ Self-Healing Security Guard:** Untrusted agent code is isolated inside a secure virtual container sandbox (`bwrap`). If code crashes or fails, the hub catches the error trace and forces agents to rewrite it until it works cleanly.
 * **🔏 Cryptographic Trust Layer:** Every final artifact, execution telemetry, and output payload is hashed with SHA-256 and signed with Ed25519 asymmetric keys, producing tamper-evident digital receipts.
-* **🖥️ Realtime Web Dashboard & Daemon:** Built-in FastAPI WebSocket server with a dark-mode glassmorphism dashboard streaming live agent telemetry, task states, blackboard mutations, and cryptographic receipts.
+* **🖥️ Realtime Web Dashboard & Daemon:** Built-in FastAPI WebSocket server with a card-based workspace, per-agent workflow graphs, execution inspectors, shared blackboard outputs, and cryptographic receipts. The workspace connects automatically to live server data; an optional preview mode demonstrates workflows without executing tasks.
 * **🤖 Multi-LLM Provider Auto-Discovery:** Seamless auto-detection and execution across Anthropic Claude (`CLAUDE_API_KEY` / `ANTHROPIC_API_KEY`), local Ollama (`localhost:11434`), OpenAI (`OPENAI_API_KEY`), or offline deterministic Mock LLM.
 
 ---
@@ -74,8 +74,46 @@ Nexus is an enterprise-grade, resilient runtime and orchestration engine for spe
 | **Sandbox Isolation** | **Bubblewrap (`bwrap`)** | Unprivileged Linux containerization using user/mount/pid/net namespaces. |
 | **Self-Healing Engine** | **Iterative LLM Refinement** | Real-time stderr capture, stack-trace feedback loop, automated code repair with retry limits. |
 | **Cryptographic Trust** | **Cryptography (`Ed25519`) & SHA-256** | High-speed asymmetric signing, tamper-proof execution receipts, standalone verification. |
-| **Web Dashboard** | **FastAPI + WebSockets + HTML5/Tailwind** | Realtime browser dashboard monitoring live agent execution and blackboard state. |
+| **Web Dashboard** | **FastAPI + WebSockets + Vite + TypeScript** | Realtime browser dashboard monitoring live agent execution and blackboard state. |
 | **LLM Driver** | **Pluggable Multi-Provider** | Auto-discovers Anthropic, Ollama, OpenAI, or falls back to offline Mock LLM. |
+
+---
+
+## TypeScript frontend
+
+The approved Nexus workspace is implemented in `frontend/src/` using strict TypeScript and Vite. Its card layout, six views, per-agent workflow graphs, previews, exports, and receipt verification use the existing FastAPI APIs and WebSocket events. No React or Next.js server is required.
+
+Use Node.js 22.12 or newer. Build the frontend before starting the daemon:
+
+```bash
+npm --prefix frontend ci
+npm --prefix frontend run build
+uv run nexus serve --port 8000
+```
+
+The build writes production HTML, JavaScript, and CSS into `nexus/server/static/`. These compiled assets are included so the normal Python server also works without Node.js at runtime. Open `http://localhost:8000`. Use `--mock-llm` for deterministic local execution.
+
+For frontend development, keep the daemon running on port 8000 and start Vite in another terminal:
+
+```bash
+npm --prefix frontend run dev
+```
+
+Open `http://127.0.0.1:5173`; Vite proxies `/api`, `/health`, and `/ws` to the daemon. The app starts with live data. Runtime settings provide an explicit offline preview mode.
+
+Validation commands:
+
+```bash
+npm --prefix frontend run typecheck
+npm --prefix frontend test
+npm --prefix frontend run build
+uv run pytest -q
+cd frontend
+npx playwright install chromium
+npm run test:e2e
+```
+
+Browser tests start an isolated mock-provider daemon on port 8769 and cover desktop/mobile navigation, live tasks, workflows, shared memory, receipts, exports, and offline preview. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to use an existing Chromium-compatible browser instead.
 
 ---
 
@@ -146,6 +184,7 @@ nexus/
 │   └── superpowers/
 │       ├── specs/               # Architectural & Design specifications
 │       └── plans/               # Detailed step-by-step implementation plans
+├── frontend/                    # Vite + strict TypeScript source and browser tests
 ├── nexus/
 │   ├── __init__.py              # Package init
 │   ├── cli.py                   # Click CLI with rich terminal formatting
