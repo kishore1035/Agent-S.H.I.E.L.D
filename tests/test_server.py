@@ -1,3 +1,4 @@
+from pathlib import Path
 import pytest
 from httpx import AsyncClient, ASGITransport
 from nexus.server.app import create_app
@@ -38,3 +39,32 @@ async def test_server_routes():
         data_bb = resp_bb.json()
         assert len(data_bb) == 1
         assert data_bb[0]["key"] == "system:status"
+
+
+@pytest.mark.asyncio
+async def test_server_spa_serving():
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Verify SPA Root serving
+        resp = await client.get("/")
+        assert resp.status_code == 200
+        assert "Nexus" in resp.text
+
+        dist_path = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+        if (dist_path / "index.html").exists():
+            assert "root" in resp.text
+            # Verify static assets mounting
+            assets_dir = dist_path / "assets"
+            if assets_dir.is_dir():
+                js_files = list(assets_dir.glob("*.js"))
+                if js_files:
+                    asset_resp = await client.get(f"/assets/{js_files[0].name}")
+                    assert asset_resp.status_code == 200
+                    assert len(asset_resp.text) > 0
+                css_files = list(assets_dir.glob("*.css"))
+                if css_files:
+                    css_resp = await client.get(f"/assets/{css_files[0].name}")
+                    assert css_resp.status_code == 200
+                    assert len(css_resp.text) > 0
+
