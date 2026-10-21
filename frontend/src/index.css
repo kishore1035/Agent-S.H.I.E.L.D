@@ -1,17 +1,15 @@
 @import "tailwindcss";
 
-@theme {
-  --color-nexus-dark: #2d3142;
-  --color-nexus-deep: #1e222e;
-  --color-nexus-card: #252a38;
-  --color-nexus-silver: #bfc0c0;
-  --color-nexus-white: #ffffff;
-  --color-nexus-coral: #ef8354;
-  --color-nexus-slate: #4f5d75;
-}
-
 @layer base {
   :root {
+    --color-nexus-dark: #2d3142;
+    --color-nexus-deep: #1e222e;
+    --color-nexus-card: #252a38;
+    --color-nexus-silver: #bfc0c0;
+    --color-nexus-white: #ffffff;
+    --color-nexus-coral: #ef8354;
+    --color-nexus-slate: #4f5d75;
+
     --background: 224 19% 22%; /* #2d3142 */
     --foreground: 0 0% 100%;   /* #ffffff */
     --card: 224 20% 18%;       /* #252a38 */
