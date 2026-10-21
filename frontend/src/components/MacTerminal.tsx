@@ -139,6 +139,7 @@ export const MacTerminal: React.FC<MacTerminalProps> = ({ events, sandboxEvents,
             const isError = evt.kind === 'error' || evt.message.includes('⚠️') || evt.message.includes('Error');
             const isSandbox = evt.kind === 'sandbox' || evt.message.includes('Sandbox') || evt.message.includes('container');
             const isSuccess = evt.message.includes('✅') || evt.message.includes('✨') || evt.message.includes('successfully');
+            const displayMessage = evt.message.replace(/[\u{1F300}-\u{1FAD6}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2700}-\u{27BF}\u{FE0F}]/gu, '').trim();
 
             return (
               <motion.div
@@ -155,17 +156,17 @@ export const MacTerminal: React.FC<MacTerminalProps> = ({ events, sandboxEvents,
                   {isError ? (
                     <span className="text-rose-400 flex items-center gap-1.5 font-medium">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0 inline text-rose-500" />
-                      {evt.message}
+                      {displayMessage}
                     </span>
                   ) : isSandbox ? (
                     <span className="text-[#bfc0c0] flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5 shrink-0 inline text-[#ef8354]" />
-                      {evt.message}
+                      {displayMessage}
                     </span>
                   ) : isSuccess ? (
-                    <span className="text-[#ef8354] font-semibold">{evt.message}</span>
+                    <span className="text-[#ef8354] font-semibold">{displayMessage}</span>
                   ) : (
-                    <span className="text-[#ffffff]">{evt.message}</span>
+                    <span className="text-[#ffffff]">{displayMessage}</span>
                   )}
                 </div>
               </motion.div>

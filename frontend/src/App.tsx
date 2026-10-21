@@ -391,7 +391,7 @@ export const App: React.FC = () => {
 
     setReceipts((prev) => [newReceipt, ...prev]);
     addEvent('receipt', `Generated Ed25519 receipt: ${newReceipt.task_id} [SHA-256: ${mockHash.slice(0, 16)}…]`);
-    addEvent('activity', '✨ Task execution completed successfully.');
+    addEvent('activity', 'Task execution completed successfully.');
 
     const finalStatus = isPreviewMode ? 'Preview complete' : 'Completed';
     setExecutionStatus(finalStatus);
