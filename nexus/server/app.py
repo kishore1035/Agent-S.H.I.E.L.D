@@ -98,9 +98,12 @@ def create_app(
     frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
     frontend_index = frontend_dist / "index.html"
     frontend_assets = frontend_dist / "assets"
+    frontend_next = frontend_dist / "_next"
 
     if frontend_assets.is_dir():
         app.mount("/assets", StaticFiles(directory=str(frontend_assets)), name="static-assets")
+    if frontend_next.is_dir():
+        app.mount("/_next", StaticFiles(directory=str(frontend_next)), name="next-assets")
 
     static_path = Path(__file__).parent / "static" / "index.html"
 
@@ -109,12 +112,41 @@ def create_app(
         return {"status": "ok", "version": "1.0.0"}
 
     @app.get("/", response_class=HTMLResponse)
-    async def get_index():
+    async def get_index(view: str | None = None):
+        if view == "min" and static_path.exists():
+            return HTMLResponse(content=static_path.read_text(encoding="utf-8"))
         if frontend_index.exists():
             return HTMLResponse(content=frontend_index.read_text(encoding="utf-8"))
         if static_path.exists():
             return HTMLResponse(content=static_path.read_text(encoding="utf-8"))
         return HTMLResponse(content="<h1>Nexus Multi-Agent Hub</h1>")
+
+    @app.get("/min", response_class=HTMLResponse)
+    @app.get("/dashboard", response_class=HTMLResponse)
+    async def get_min_dashboard():
+        if static_path.exists():
+            return HTMLResponse(content=static_path.read_text(encoding="utf-8"))
+        return await get_index()
+
+    @app.get("/next", response_class=HTMLResponse)
+    async def get_next_app():
+        if frontend_index.exists():
+            return HTMLResponse(content=frontend_index.read_text(encoding="utf-8"))
+        return await get_index()
+
+    @app.get("/blackboard", response_class=HTMLResponse)
+    async def get_blackboard_page():
+        blackboard_html = frontend_dist / "blackboard.html"
+        if blackboard_html.exists():
+            return HTMLResponse(content=blackboard_html.read_text(encoding="utf-8"))
+        return await get_index()
+
+    @app.get("/execution-inspector", response_class=HTMLResponse)
+    async def get_inspector_page():
+        inspector_html = frontend_dist / "execution-inspector.html"
+        if inspector_html.exists():
+            return HTMLResponse(content=inspector_html.read_text(encoding="utf-8"))
+        return await get_index()
 
     @app.get("/api/agents")
     async def get_agents():
