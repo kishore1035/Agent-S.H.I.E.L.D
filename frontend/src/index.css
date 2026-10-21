@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+@theme {
+  --color-nexus-dark: #2d3142;
+  --color-nexus-deep: #1e222e;
+  --color-nexus-card: #252a38;
+  --color-nexus-silver: #bfc0c0;
+  --color-nexus-white: #ffffff;
+  --color-nexus-coral: #ef8354;
+  --color-nexus-slate: #4f5d75;
+}
+
+@layer base {
+  :root {
+    --background: 224 19% 22%; /* #2d3142 */
+    --foreground: 0 0% 100%;   /* #ffffff */
+    --card: 224 20% 18%;       /* #252a38 */
+    --card-foreground: 0 0% 100%;
+    --popover: 224 20% 18%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 17 83% 63%;     /* #ef8354 Coral */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 219 20% 38%;   /* #4f5d75 Slate */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 180 1% 75%;       /* #bfc0c0 Silver */
+    --muted-foreground: 180 1% 75%;
+    --accent: 17 83% 63%;      /* #ef8354 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 219 20% 38%;
+    --input: 219 20% 32%;
+    --ring: 17 83% 63%;
+    --radius: 0.85rem;
+  }
+
+  .light {
+    --background: 180 2% 94%;
+    --foreground: 224 19% 22%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 19% 22%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 19% 22%;
+    --primary: 17 83% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 219 15% 85%;
+    --secondary-foreground: 224 19% 22%;
+    --muted: 180 2% 80%;
+    --muted-foreground: 219 15% 45%;
+    --accent: 17 83% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 180 2% 80%;
+    --input: 180 2% 82%;
+    --ring: 17 83% 55%;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  background-color: #222634;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Background Cyber Grid with bespoke #4f5d75 / #ef8354 ambient illumination */
+.cyber-grid {
+  background-size: 36px 36px;
+  background-image: 
+    linear-gradient(to right, rgba(79, 93, 117, 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(79, 93, 117, 0.18) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 70%, transparent 100%);
+}
+
+.light .cyber-grid {
+  background-image: 
+    linear-gradient(to right, rgba(79, 93, 117, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(79, 93, 117, 0.12) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 70%, transparent 100%);
+}
+
+/* Glassmorphism Panels using #2d3142 and #4f5d75 */
+.glass-panel {
+  background: rgba(45, 49, 66, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(191, 192, 192, 0.14);
+}
+
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(79, 93, 117, 0.18);
+}
+
+/* Glowing Border Effects with Coral & Slate */
+.glow-border {
+  position: relative;
+}
+.glow-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(239, 131, 84, 0.5), rgba(79, 93, 117, 0.4), transparent 70%);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(191, 192, 192, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 131, 84, 0.5);
+}
+
+/* Animated Flowing Line with #ef8354 */
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+.flowing-stroke {
+  stroke-dasharray: 6 6;
+  animation: flowDash 1.2s linear infinite;
+}
+
+/* Terminal Laser Scan Line */
+@keyframes laserSweep {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.laser-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ef8354, #ffffff, #ef8354, transparent);
+  box-shadow: 0 0 12px #ef8354;
+  animation: laserSweep 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Holographic Sheen Animation for Trust Card with Coral, Slate, Silver & White */
+@keyframes holographic {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.hologram-sheen {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 131, 84, 0.18),
+    rgba(79, 93, 117, 0.28),
+    rgba(191, 192, 192, 0.2),
+    rgba(255, 255, 255, 0.15),
+    rgba(239, 131, 84, 0.18)
+  );
+  background-size: 300% 300%;
+  animation: holographic 7s ease infinite;
+}
+
+/* Button Shimmer Sweep Effect */
+@keyframes buttonShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s ease-in-out;
+}
+.shimmer-sweep:hover::after {
+  transform: translateX(250%);
+}
