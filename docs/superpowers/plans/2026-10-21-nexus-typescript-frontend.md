@@ -26,10 +26,10 @@
 - Create: `frontend/vite.config.ts`
 - Create: `frontend/index.html`
 
-- [ ] **Step 1: Create package.json and configuration files**
-- [ ] **Step 2: Run npm install in frontend directory**
-- [ ] **Step 3: Run npm run build smoke test**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Create package.json and configuration files**
+- [x] **Step 2: Run npm install in frontend directory**
+- [x] **Step 3: Run npm run build smoke test**
+- [x] **Step 4: Commit**
 
 ---
 
@@ -44,10 +44,10 @@
 - `SignedReceipt`: `{ task_id, payload_digest, public_key, signature, timestamp }`
 - `WsMessage`: `{ type: "log" | "blackboard_update" | "sandbox_event" | "receipt", ... }`
 
-- [ ] **Step 1: Define comprehensive TypeScript interfaces**
-- [ ] **Step 2: Create Tailwind CSS setup with Yuva Garden palette tokens**
-- [ ] **Step 3: Verify TypeScript compilation with tsc --noEmit**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Define comprehensive TypeScript interfaces**
+- [x] **Step 2: Create Tailwind CSS setup with Yuva Garden palette tokens**
+- [x] **Step 3: Verify TypeScript compilation with tsc --noEmit**
+- [x] **Step 4: Commit**
 
 ---
 
@@ -60,10 +60,10 @@
 - `useNexusSocket()`: `{ isConnected, events, sendTask, clearEvents, latestReceipt }`
 - `useNexusApi()`: `{ fetchAgents(), fetchBlackboard(), runTaskRest() }`
 
-- [ ] **Step 1: Implement reconnecting WebSocket hook with event dispatching**
-- [ ] **Step 2: Implement REST API fetch client**
-- [ ] **Step 3: Verify TypeScript compilation**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Implement reconnecting WebSocket hook with event dispatching**
+- [x] **Step 2: Implement REST API fetch client**
+- [x] **Step 3: Verify TypeScript compilation**
+- [x] **Step 4: Commit**
 
 ---
 
@@ -76,10 +76,10 @@
 - `Topbar`: Navigation tabs (`Workspace`, `Workers`, `Blackboard`), live WebSocket indicator, latency badge
 - `MetricRibbon`: Realtime counters for active workers, blackboard revisions, sandboxes executed, and verified receipts
 
-- [ ] **Step 1: Build Topbar component**
-- [ ] **Step 2: Build MetricRibbon component**
-- [ ] **Step 3: Verify build**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Build Topbar component**
+- [x] **Step 2: Build MetricRibbon component**
+- [x] **Step 3: Verify build**
+- [x] **Step 4: Commit**
 
 ---
 
