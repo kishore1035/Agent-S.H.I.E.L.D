@@ -1,230 +1,242 @@
-import React, { useState, useRef } from 'react';
-import { motion } from 'motion/react';
-import { ShieldCheck, ShieldAlert, KeyRound, Hash, Clock, Download, Check, Copy } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import React, { useState } from 'react';
+import { Lock, ShieldCheck, Check, AlertCircle, Upload, FileCheck } from 'lucide-react';
 import { verifyReceiptSignature } from '../receipts';
+import { parseReceipt } from '../validation';
 import type { Receipt } from '../types';
-import { TextScramble } from './motion/TextScramble';
-import { BorderTrail } from './motion/BorderTrail';
 
 interface TiltReceiptCardProps {
-  receipt: Receipt;
-  onVerified?: (verified: boolean) => void;
+  receipts: Receipt[];
+  onImportReceipt?: (receipt: Receipt) => void;
 }
 
-export const TiltReceiptCard: React.FC<TiltReceiptCardProps> = ({ receipt, onVerified }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verifiedState, setVerifiedState] = useState<boolean | null>(receipt.verified ?? null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+export const TiltReceiptCard: React.FC<TiltReceiptCardProps> = ({
+  receipts,
+  onImportReceipt,
+}) => {
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [verificationResults, setVerificationResults] = useState<Record<string, boolean>>({});
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    setRotateX(-(y / rect.height) * 14);
-    setRotateY((x / rect.width) * 14);
-  };
-
-  const handleMouseLeave = () => {
-    setRotateX(0);
-    setRotateY(0);
-  };
-
-  const handleVerify = async () => {
-    setIsVerifying(true);
+  const handleVerify = async (receipt: Receipt) => {
+    setVerifyingId(receipt.task_id);
     try {
-      let isVerified = false;
-      if (receipt.preview) {
-        await new Promise((r) => setTimeout(r, 600));
-        isVerified = true;
-      } else if (receipt.public_key && receipt.signature) {
-        isVerified = await verifyReceiptSignature(receipt);
-      } else {
-        isVerified = true;
-      }
-
-      setVerifiedState(isVerified);
-      if (onVerified) onVerified(isVerified);
-
-      if (isVerified) {
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.7 },
-          colors: ['#ef8354', '#bfc0c0', '#ffffff', '#4f5d75'],
-        });
-      }
+      const valid = await verifyReceiptSignature(receipt);
+      setVerificationResults((prev) => ({ ...prev, [receipt.task_id]: valid }));
     } catch {
-      setVerifiedState(false);
+      setVerificationResults((prev) => ({ ...prev, [receipt.task_id]: false }));
     } finally {
-      setIsVerifying(false);
+      setVerifyingId(null);
     }
   };
 
-  const copyToClipboard = (text: string, keyName: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(keyName);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const downloadJson = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(receipt, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute('href', dataStr);
-    dlAnchorElem.setAttribute('download', `receipt-${receipt.task_id || 'nexus'}.json`);
-    dlAnchorElem.click();
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const raw = JSON.parse(event.target?.result as string);
+        const parsed = parseReceipt(raw);
+        onImportReceipt?.(parsed);
+      } catch {
+        // invalid receipt
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
-    <div style={{ perspective: 1000 }} className="w-full">
-      <motion.div
-        ref={cardRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        animate={{
-          rotateX,
-          rotateY,
-          scale: rotateX !== 0 ? 1.015 : 1,
+    <div className="shield-container" style={{ paddingBlock: '40px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: '36px',
+          flexWrap: 'wrap',
+          gap: '16px',
         }}
-        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-        className="glass-panel rounded-2xl p-6 border border-[#ef8354]/40 relative overflow-hidden shadow-2xl transition-shadow hover:shadow-[0_0_40px_rgba(239,131,84,0.22)] bg-gradient-to-br from-[#2d3142]/95 via-[#252a38]/95 to-[#1e222e]/95"
       >
-        {/* Dynamic Border Trail on successful verification */}
-        {verifiedState === true && <BorderTrail size={90} />}
-
-        {/* Ambient Holographic Layer */}
-        <div className="absolute inset-0 pointer-events-none hologram-sheen opacity-40 mix-blend-overlay" />
-
-        {/* Card Header */}
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#4f5d75]/50">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#ef8354]/15 text-[#ef8354] border border-[#ef8354]/30 shadow-[0_0_15px_rgba(239,131,84,0.2)]">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-[#ffffff] tracking-tight">
-                  Cryptographic Execution Receipt
-                </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#ef8354]/20 text-[#ef8354] border border-[#ef8354]/30 font-semibold">
-                  Ed25519 Signed
-                </span>
-              </div>
-              <p className="text-xs text-[#bfc0c0] mt-0.5">
-                Task ID: <span className="font-mono text-[#ffffff] font-medium">{receipt.task_id || 'n/a'}</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={downloadJson}
-              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-[#4f5d75]/40 hover:bg-[#4f5d75] text-[#bfc0c0] hover:text-[#ffffff] transition-colors border border-[#4f5d75]/60"
-              title="Download JSON Receipt"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export</span>
-            </button>
-          </div>
+        <div>
+          <span className="shield-section-label">Cryptographic Trust Layer</span>
+          <h2 style={{ fontSize: 'clamp(32px, 4vw, 48px)', margin: '0 0 8px' }}>
+            Tamper-Evident <em>Receipt Vault.</em>
+          </h2>
+          <p style={{ color: 'var(--shield-muted)', fontSize: '16px', maxWidth: '720px' }}>
+            Every completed agent execution, output payload, and telemetry packet is hashed with SHA-256 and signed with Ed25519 asymmetric keys.
+          </p>
         </div>
 
-        {/* Receipt Properties Matrix */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 my-5 text-xs">
-          {/* Signer Identity */}
-          <div className="p-3 rounded-xl bg-[#222634]/80 border border-[#4f5d75]/50">
-            <div className="flex items-center justify-between text-[#bfc0c0]">
-              <span className="flex items-center gap-1.5 font-medium">
-                <KeyRound className="w-3.5 h-3.5 text-[#ef8354]" />
-                Signer Agent ID
-              </span>
-              <button
-                type="button"
-                onClick={() => copyToClipboard('nexus-daemon-ed25519', 'signer')}
-                className="text-zinc-500 hover:text-zinc-300"
-              >
-                {copiedKey === 'signer' ? <Check className="w-3 h-3 text-[#ef8354]" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
-            <div id="receipt-signer" className="font-mono text-[#ffffff] font-bold mt-1.5 truncate">
-              nexus-daemon-ed25519
-            </div>
-          </div>
-
-          {/* Timestamp */}
-          <div className="p-3 rounded-xl bg-[#222634]/80 border border-[#4f5d75]/50">
-            <div className="flex items-center justify-between text-[#bfc0c0]">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Clock className="w-3.5 h-3.5 text-[#bfc0c0]" />
-                Issued Timestamp
-              </span>
-            </div>
-            <div className="font-mono text-[#ffffff] font-bold mt-1.5 truncate">
-              {receipt.timestamp || new Date().toISOString()}
-            </div>
-          </div>
-
-          {/* SHA-256 Digest */}
-          <div className="p-3 rounded-xl bg-[#222634]/80 border border-[#4f5d75]/50 md:col-span-2">
-            <div className="flex items-center justify-between text-[#bfc0c0]">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Hash className="w-3.5 h-3.5 text-[#ef8354]" />
-                Payload SHA-256 Digest
-              </span>
-              <button
-                type="button"
-                onClick={() => copyToClipboard(receipt.payload_digest || '', 'digest')}
-                className="text-zinc-500 hover:text-zinc-300"
-              >
-                {copiedKey === 'digest' ? <Check className="w-3 h-3 text-[#ef8354]" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
-            <div id="receipt-hash" className="font-mono text-[11px] text-[#ef8354] font-semibold mt-1.5 break-all">
-              <TextScramble>
-                {receipt.payload_digest || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
-              </TextScramble>
-            </div>
-          </div>
-        </div>
-
-        {/* Verification Result Callout */}
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#4f5d75]/50">
-          <div className="flex items-center gap-2">
-            {verifiedState === null ? (
-              <span id="verify-result" className="text-xs text-[#bfc0c0] font-mono">
-                Status: Pending verification
-              </span>
-            ) : verifiedState ? (
-              <span id="verify-result" className="flex items-center gap-1.5 text-xs text-[#ef8354] font-semibold font-mono">
-                <ShieldCheck className="w-4 h-4 text-[#ef8354]" />
-                Cryptographically Verified (Valid signature)
-              </span>
-            ) : (
-              <span id="verify-result" className="flex items-center gap-1.5 text-xs text-rose-400 font-semibold font-mono">
-                <ShieldAlert className="w-4 h-4 text-rose-400" />
-                Invalid / Tampered Receipt Signature
-              </span>
-            )}
-          </div>
-
-          <motion.button
-            type="button"
-            id="verify-receipt-btn"
-            onClick={handleVerify}
-            disabled={isVerifying}
-            className="shimmer-sweep relative inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#ef8354] to-[#e76f51] hover:shadow-[0_0_20px_rgba(239,131,84,0.4)] disabled:opacity-50 transition-all cursor-pointer"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+        {/* Upload receipt JSON file */}
+        <div>
+          <label
+            htmlFor="receipt-file"
+            className="shield-pill shield-pill-dark"
+            style={{ cursor: 'pointer' }}
           >
-            <KeyRound className="w-3.5 h-3.5 text-white" />
-            <span>{isVerifying ? 'Verifying with WebCrypto…' : 'Verify Receipt'}</span>
-          </motion.button>
+            <Upload size={14} />
+            <span>Import Receipt File</span>
+          </label>
+          <input
+            id="receipt-file"
+            type="file"
+            accept=".json,application/json"
+            onChange={handleFileUpload}
+            style={{ display: 'none' }}
+          />
         </div>
-      </motion.div>
+      </div>
+
+      <div id="receipt-list" className="shield-records">
+        {receipts.length > 0 ? (
+          receipts.map((r, i) => {
+            const isVerified = verificationResults[r.task_id];
+            const isVerifying = verifyingId === r.task_id;
+
+            return (
+              <details key={r.task_id || i} className="record" open>
+                <summary>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <ShieldCheck size={20} style={{ color: 'var(--shield-terracotta)' }} />
+                    <span style={{ fontWeight: 500 }}>Receipt for Task: {r.task_id}</span>
+                  </div>
+                  <span
+                    style={{
+                      fontFamily: 'var(--shield-mono)',
+                      fontSize: '11px',
+                      color: 'var(--shield-muted)',
+                    }}
+                  >
+                    {r.timestamp ? new Date(r.timestamp).toLocaleDateString() : 'Active'}
+                  </span>
+                </summary>
+
+                <div style={{ marginTop: '16px' }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gap: '16px',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: '16px',
+                        borderRadius: '14px',
+                        background: 'var(--shield-paper-warm)',
+                        border: '1px solid var(--shield-line)',
+                      }}
+                    >
+                      <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--shield-muted)' }}>
+                        SHA-256 Digest
+                      </span>
+                      <p
+                        style={{
+                          fontFamily: 'var(--shield-mono)',
+                          fontSize: '12px',
+                          color: 'var(--shield-ink)',
+                          wordBreak: 'break-all',
+                          margin: '4px 0 0',
+                        }}
+                      >
+                        {r.payload_digest}
+                      </p>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: '16px',
+                        borderRadius: '14px',
+                        background: 'var(--shield-paper-warm)',
+                        border: '1px solid var(--shield-line)',
+                      }}
+                    >
+                      <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--shield-muted)' }}>
+                        Ed25519 Public Key
+                      </span>
+                      <p
+                        style={{
+                          fontFamily: 'var(--shield-mono)',
+                          fontSize: '12px',
+                          color: 'var(--shield-ink)',
+                          wordBreak: 'break-all',
+                          margin: '4px 0 0',
+                        }}
+                      >
+                        {r.public_key || 'Embedded daemon authority key'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {r.signature && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--shield-muted)' }}>
+                        Digital Asymmetric Signature
+                      </span>
+                      <pre className="code-block" style={{ marginTop: '4px', fontSize: '11px' }}>
+                        {r.signature}
+                      </pre>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                      {isVerified !== undefined && (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '13px',
+                            color: isVerified ? 'var(--shield-emerald, #2e5a44)' : 'var(--shield-crimson, #a63a2a)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {isVerified ? (
+                            <>
+                              <Check size={16} /> Signature verified (Ed25519)
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle size={16} /> Verification failed (Signature mismatch)
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      data-verify-receipt={String(i)}
+                      className="shield-pill shield-pill-terracotta"
+                      style={{ minHeight: '38px', padding: '6px 16px', fontSize: '13px' }}
+                      onClick={() => handleVerify(r)}
+                      disabled={isVerifying}
+                    >
+                      <Lock size={13} />
+                      <span>{isVerifying ? 'Verifying Ed25519…' : 'Verify Signature'}</span>
+                    </button>
+                  </div>
+                </div>
+              </details>
+            );
+          })
+        ) : (
+          <div
+            style={{
+              padding: '60px 24px',
+              textAlign: 'center',
+              border: '1px dashed var(--shield-line)',
+              borderRadius: '20px',
+              color: 'var(--shield-muted)',
+            }}
+          >
+            <Lock size={32} strokeWidth={1.5} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+            <p>No cryptographic receipts archived yet. Run a multi-agent task or import a receipt file.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
